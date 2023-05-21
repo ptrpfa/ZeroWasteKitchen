@@ -57,7 +57,7 @@ DROP TABLE IF EXISTS `Ingredient`;
 CREATE TABLE `Ingredient` (
   `IngredientID` int NOT NULL AUTO_INCREMENT,
   `Name` varchar(100) NOT NULL,
-  `Type` varchar(100) NOT NULL DEFAULT 'General',
+  `Category` varchar(100) NOT NULL DEFAULT 'General',
   `Description` varchar(1000) NOT NULL DEFAULT '',
   PRIMARY KEY (`IngredientID`),
   UNIQUE KEY `Ingredient_UN_Name` (`Name`)
@@ -138,8 +138,6 @@ CREATE TABLE `RecipeIngredient` (
   `MappingID` int NOT NULL AUTO_INCREMENT,
   `RecipeID` int NOT NULL,
   `IngredientID` int NOT NULL,
-  `Quantity` float NOT NULL DEFAULT '0',
-  `Measurement` varchar(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`MappingID`),
   KEY `RecipeIngredient_FK_Recipe` (`RecipeID`),
   KEY `RecipeIngredient_FK_Ingredient` (`IngredientID`),
