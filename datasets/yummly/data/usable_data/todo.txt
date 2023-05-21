@@ -1,3 +1,1 @@
-- remove duplicate recipes
-- need reformat some recipe (see Baked-Black-Bean-and-Avocado-Burritos-1078083), take every 2 entries only
 - some whole recipe in one index (see _-Moroccon-Inspired-Lamb-Tagine-With-Pomegrante-Pearls-_-1965369)
