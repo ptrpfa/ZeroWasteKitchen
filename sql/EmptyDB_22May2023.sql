@@ -58,7 +58,6 @@ CREATE TABLE `Ingredient` (
   `IngredientID` int NOT NULL AUTO_INCREMENT,
   `Name` varchar(100) NOT NULL,
   `Category` varchar(100) NOT NULL DEFAULT 'General',
-  `Description` varchar(1000) NOT NULL DEFAULT '',
   PRIMARY KEY (`IngredientID`),
   UNIQUE KEY `Ingredient_UN_Name` (`Name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
