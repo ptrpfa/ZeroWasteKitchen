@@ -80,7 +80,7 @@ DROP TABLE IF EXISTS `Recipe`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Recipe` (
-  `RecipeID` int NOT NULL AUTO_INCREMENT,
+  `RecipeID` int NOT NULL,
   `Name` varchar(100) NOT NULL,
   `Description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '',
   `MealType` varchar(100) NOT NULL DEFAULT 'General',
