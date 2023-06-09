@@ -1,1 +1,1 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"e3808f8c18854242b44c195fecd058ed","collectionName":"Nutrition","type":"collection"}
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"c6058c65f6df4186a8d2ecdf1b29e1dd","collectionName":"Nutrition","type":"collection"}
