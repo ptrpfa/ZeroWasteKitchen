@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recipe Details</title>
+    <!-- Add Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height:100%;    
+        }
+
+        .card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tag-image {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+        
+        .card-img-top {
+            object-fit: cover;
+            height: 200px;
+            width: 100%;
+        }
+        
+        .dish-name {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Recipe Details</h1>
+        <div class="recipe-row">
+            {% for recipe in recipes %}
+            {% if forloop.counter0|divisibleby:4 %}
+            <div class="row row-cols-1 row-cols-md-4 g-4">
+            {% endif %}
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title dish-name">{{ recipe.dish }}</h5>
+                        <img src="{{ recipe.img }}" class="card-img-top" alt="Recipe Image">
+                        <div class="card-header">
+                            <div class="tags">
+                                {% for tag in recipe.tags %}
+                                    {% if 'Cuisine: ' in tag %}
+                                        <span class="badge bg-primary">{{ tag }}</span>
+                                    {% elif tag == recipe.difficulty %}
+                                        <span class="badge bg-info">{{ tag }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ tag }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="badge bg-secondary">Ratings: {{ recipe.ratings }}</span>
+                            </div>
+                        </div>
+                        <p class="card-text">{{ recipe.description }}</p>
+                        <div class="mt-auto text-end">
+                            <a href="#" class="btn btn-primary">View This Recipe!</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if forloop.counter|divisibleby:4 or forloop.last %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Add Bootstrap JS (optional, only if you need additional functionality) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+    
