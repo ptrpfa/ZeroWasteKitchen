@@ -53,8 +53,8 @@ def register_user(request):
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success})
 
-# views.py
-def recipe_detail_view(request, cuisine=None):
+
+def recipe_view(request, cuisine=None):
     data = [
     {
         'cuisine': 'Italian',
