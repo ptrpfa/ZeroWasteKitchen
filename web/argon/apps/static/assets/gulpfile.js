@@ -1,11 +1,3 @@
-/*
-
-=========================================================
-* AppSeed - Simple SCSS compiler via Gulp
-=========================================================
-
-*/
-
 var autoprefixer = require('gulp-autoprefixer');
 var browserSync = require('browser-sync').create();
 var cleanCss = require('gulp-clean-css');

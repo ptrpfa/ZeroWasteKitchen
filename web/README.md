@@ -21,3 +21,9 @@
     ```
     python3 argon/manage.py runserver
     ```
+
+5. Default credentials (temporart)
+    ```
+    Username: test
+    Password: test
+    ```
