@@ -1,0 +1,40 @@
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <div class="row">
+      <div class="col-xl-12">
+        <div class="card">
+          <div class="card-header border-0">
+            <h3 class="mb-0">Recipe List</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-items-center table-flush">
+              <thead class="thead-light">
+                <tr>
+                  <th scope="col">RecipeID</th>
+                  <th scope="col">Meal Type</th>
+                  <th scope="col">Cuisine</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for recipe in recipes %}
+                <tr>
+                  <td>{{ recipe.RecipeID }}</td>
+                  <td>{{ recipe.MealType }}</td>
+                  <td>{{ recipe.Cuisine }}</td>
+                  <td>{{ recipe.Name }}</td>
+                  <td>{{ recipe.Description }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5">No recipes found.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
