@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import os
-from decouple import config
+from utils import *
 from unipath import Path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
