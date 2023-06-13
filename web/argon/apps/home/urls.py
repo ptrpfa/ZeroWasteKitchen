@@ -5,7 +5,8 @@ from apps.home import views
 
 urlpatterns = [
     path('', views.index, name='home'),                                             # The home page
-    path('test/', views.recipe_view, name='recipe'),
+    path('recipe/', views.recipe_view, name='recipe'),
     path('recipe/<str:cuisine>/', views.recipe_view, name='recipe_by_cuisine'),
-    re_path(r'^.*\.*', views.pages, name='pages'),                                  # Matches any html file
+    path('recipe_details/', views.recipe_details, name='recipe_details'),
+    re_path(r'^.*\.*', views.pages, name='pages')                                 # Matches any html file
 ]

@@ -67,7 +67,7 @@
                         </div>
                         <p class="card-text">{{ recipe.description }}</p>
                         <div class="mt-auto text-end">
-                            <a href="#" class="btn btn-primary">View This Recipe!</a>
+                            <a href="{% url 'recipe_details' %}?dish={{ recipe.dish }}" class="btn btn-primary">View This Recipe!</a>
                         </div>
                     </div>
                 </div>
