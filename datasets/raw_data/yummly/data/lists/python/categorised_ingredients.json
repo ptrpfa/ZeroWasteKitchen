@@ -1,0 +1,78 @@
+[
+    {
+        "recipeName": "Revolutionary Mac & Cheese",
+        "categorisedIngredients": {
+            "other": [
+                "dried pasta",
+                "milk",
+                "shredded cheddar cheese",
+                "dijon mustard"
+            ],
+            "seasoning": [
+                "salt"
+            ]
+        }
+    },
+    {
+        "recipeName": "Chicago Chicken",
+        "categorisedIngredients": {
+            "other": [
+                "jalapeno chilies",
+                "lemon",
+                "dried oregano",
+                "olive oil",
+                "garlic",
+                "boneless skinless chicken breasts"
+            ]
+        }
+    },
+    {
+        "recipeName": "Pork Chops with Balsamic Glaze",
+        "categorisedIngredients": {
+            "other": [
+                "boneless center cut pork chops",
+                "olive oil",
+                "balsamic vinegar"
+            ],
+            "seasoning": [
+                "salt",
+                "ground black pepper"
+            ],
+            "sweetener": [
+                "sugar"
+            ]
+        }
+    },
+    {
+        "recipeName": "Chicken Avocado Burgers",
+        "categorisedIngredients": {
+            "other": [
+                "ground chicken",
+                "avocado",
+                "chopped garlic",
+                "panko",
+                "jalapeno chilies"
+            ],
+            "seasoning": [
+                "salt",
+                "pepper"
+            ]
+        }
+    },
+    {
+        "recipeName": "Country Fried Steak Recipe With Gravy",
+        "categorisedIngredients": {
+            "other": [
+                "steak",
+                "eggs",
+                "buttermilk",
+                "vegetable oil",
+                "whole milk",
+                "pan drippings"
+            ],
+            "baking": [
+                "flour"
+            ]
+        }
+    }
+]
