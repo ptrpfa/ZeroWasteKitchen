@@ -17,12 +17,17 @@
     python3 argon/manage.py migrate
     ```
 
-4. Run Djagon web app (default port 8000)
+4. Create a copy of the `.env_bak` file to `.env`, and update settings (if any).
+    ```
+    cp .env_bak .env
+    ```
+
+5. Run Djagon web app (default port 8000)
     ```
     python3 argon/manage.py runserver
     ```
 
-5. Default credentials (temporart)
+6. Default credentials (temporart)
     ```
     Username: test
     Password: test
