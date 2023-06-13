@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
+from .models import Recipe
 
 
 @login_required(login_url="/login/")
@@ -362,6 +363,8 @@ def recipe_details(request):
         return HttpResponse('Recipe not found!')
     
     
-def test(request):
-    return render('recipe/detailed.html')
+def get_recipes(request):
+    recipes = Recipe.objects.all()[:50]
+    context = {'recipes': recipes}
+    return render(request, 'recipe/index.html', context)
 
