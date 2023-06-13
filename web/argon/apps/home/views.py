@@ -7,14 +7,12 @@ from django.template import loader
 from django.urls import reverse
 from .models import Recipe
 
-
 @login_required(login_url="/login/")
 def index(request):
     context = {'segment': 'index'}
 
     html_template = loader.get_template('home/index.html')
     return HttpResponse(html_template.render(context, request))
-
 
 @login_required(login_url="/login/")
 def pages(request):
@@ -43,6 +41,7 @@ def pages(request):
 
 @login_required(login_url="/login/")
 def recipe_view(request, cuisine=None):
+    print("here!")
     data = [
     {
         'cuisine': 'Italian',
@@ -200,6 +199,7 @@ def recipe_view(request, cuisine=None):
 
     return render(request, 'recipe/index.html', context)
 
+@login_required(login_url="/login/")
 def recipe_details(request):
     data = [
     {
@@ -362,7 +362,7 @@ def recipe_details(request):
         # Recipe not found
         return HttpResponse('Recipe not found!')
     
-    
+@login_required(login_url="/login/")
 def get_recipes(request):
     recipes = Recipe.objects.all()[:50]
     context = {'recipes': recipes}
