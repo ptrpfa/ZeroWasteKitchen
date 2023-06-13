@@ -10,7 +10,5 @@ urlpatterns = [
     path('login/', login_view, name="login"),
     path('register/', register_user, name="register"),
     path("logout/", LogoutView.as_view(), name="logout"),
-    path('test/', views.recipe_view, name='recipe'),
-    path('recipe/<str:cuisine>/', views.recipe_view, name='recipe_by_cuisine')
 ]
 
