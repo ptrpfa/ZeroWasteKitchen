@@ -33,20 +33,23 @@ for row in ingredients.itertuples():
         ''',
         (ingredient_id, name, category)
     )
-connection.commit()
+    connection.commit()
 
-for row in recipeingredient.itertuples():
-    ingredient_id = int(row.IngredientID)
-    recipe_id = int(row.RecipeID)
+# print("Now Inserting Recipe Ingredient Mapping\n")
 
-    cursor.execute(
-        '''
-        INSERT INTO recipeingredient (RecipeID, IngredientID)
-        VALUES (%s, %s)
-        ''',
-        (recipe_id, ingredient_id)
-    )
+# for row in recipeingredient.itertuples():
+#     ingredient_id = int(row.IngredientID)
+#     recipe_id = int(row.RecipeID)
 
-connection.commit()
+#     cursor.execute(
+#         '''
+#         INSERT INTO recipeingredient (RecipeID, IngredientID)
+#         VALUES (%s, %s)
+#         ''',
+#         (recipe_id, ingredient_id)
+#     )
+
+#     connection.commit()
+
 connection.close()
 print('CSV data inserted into MySQL table successfully.')
