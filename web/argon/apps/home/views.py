@@ -416,3 +416,10 @@ def view_recipe(request, id):
     mongo_client.close()
 
     return render(request, 'recipe/view_recipe.html', context)
+
+@login_required(login_url="/login/")
+def search_recipes(request):
+    context = {'segment': 'search_recipe'}
+
+    html_template = loader.get_template('recipe/search.html')
+    return HttpResponse(html_template.render(context, request))
