@@ -42,6 +42,26 @@
         .recipe-steps {
             margin-bottom: 20px;
         }
+
+        .recipe-reviews {
+            margin-bottom: 20px;
+        }
+
+        .review {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .review p {
+            margin: 0;
+        }
+
+        .no-reviews {
+            font-style: italic;
+            color: #777;
+        }
     </style>
 </head>
 <body>
@@ -62,7 +82,7 @@
                 <h3>Instructions</h3>
                 <ol>
                     {% for instruction in recipe.Instructions %}
-                        <li>{{ instruction }}</li>
+                        <li>{{ instruction.Description }}</li>
                     {% endfor %}
                 </ol>
             </div>
@@ -73,8 +93,38 @@
             <div class="recipe-steps">
                 <h3>Steps</h3>
                 <ol>
-                    <li>Number of steps:{{ step }}</li>
+                    <li>Number of steps: {{ recipe.Steps }}</li>
                 </ol>
+            </div>
+            <div class="recipe-nutrition">
+                <h3>Nutrition Facts</h3>
+                <ul>
+                    <li><strong>Servings:</strong> {{ recipe.Servings }}</li>
+                    <li><strong>Calories:</strong> {{ recipe.Calories }}</li>
+                    <li><strong>Fats:</strong> {{ recipe.Fats }}</li>
+                    <li><strong>Sodium:</strong> {{ recipe.Sodium }}</li>
+                    <li><strong>Carbohydrates:</strong> {{ recipe.Carbohydrates }}</li>
+                    <li><strong>Protein:</strong> {{ recipe.Protein }}</li>
+                </ul>
+            </div>
+            <div class="recipe-reviews">
+                <h3>Reviews</h3>
+                {% if recipe.Reviews %}
+                    {% for review in recipe.Reviews %}
+                        <div class="review">
+                            <p><strong>Name:</strong> {{ review.Name }}</p>
+                            <p><strong>Rating:</strong> {{ review.Rating }}</p>
+                            <p><strong>Text:</strong> {{ review.Text }}</p>
+                            <p><strong>User ID:</strong> {{ review.UserID }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-reviews">No reviews available</p>
+                {% endif %}
+            </div>
+            <div class="recipe-overall-rating">
+                <h3>Overall Rating</h3>
+                <p>{{ recipe.OverallRating }}</p>
             </div>
         </div>
     </div>
