@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recipe Details</title>
+   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        .recipe-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .recipe-image {
+            max-width: 300px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .recipe-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .recipe-description {
+            margin-bottom: 20px;
+        }
+
+        .recipe-ingredient-list {
+            margin-bottom: 20px;
+        }
+
+        .recipe-instructions {
+            margin-bottom: 20px;
+        }
+
+        .recipe-total-time {
+            margin-bottom: 20px;
+        }
+
+        .recipe-steps {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="recipe-container">
+            <img src="{{ recipe.Image }}" class="recipe-image" alt="Recipe Image">
+            <h1 class="recipe-name">{{ recipe.Name }}</h1>
+            <p class="recipe-description">{{ recipe.Description }}</p>
+            <div class="recipe-ingredient-list">
+                <h3>Ingredients</h3>
+                <ul>
+                    {% for ingredient in recipe.Ingredient_Lines %}
+                        <li>{{ ingredient }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="recipe-instructions">
+                <h3>Instructions</h3>
+                <p>{{ recipe.Instructions }}</p>
+            </div>
+            <div class="recipe-total-time">
+                <h3>Total Time</h3>
+                <p>{{ recipe.Total_Time }}</p>
+            </div>
+            <div class="recipe-steps">
+                <h3>Steps</h3>
+                <ol>
+                    {% for step in recipe.Steps %}
+                        <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
