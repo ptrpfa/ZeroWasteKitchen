@@ -1,7 +1,7 @@
 from decouple import config
 from pymongo import MongoClient
 
-# Function to get MongoDB database connection
+# Function to get MongoDB client
 def get_mongodb():
     return MongoClient(config('MONGODB_URI'))
 
