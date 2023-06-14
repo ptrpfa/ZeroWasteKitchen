@@ -384,6 +384,8 @@ def get_recipes(request):
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
 
+from django.db import connections
+
 @login_required(login_url="/login/")
 def view_recipe(request, id):
     # Get the 'Instructions' collection from MongoDB
@@ -394,41 +396,51 @@ def view_recipe(request, id):
 
     # Query the 'Instructions' collection for the recipe with the specified RecipeID
     recipe_data = instructions_collection.find_one({'RecipeID': id})
-
+    
     # Query the 'Nutrition' collection for the nutrition information of the recipe
     nutrition_data = nutrition_collection.find_one({'RecipeID': id})
-
-    # Query the 'Reviews' collection for the reviews of the recipe with the specified RecipeID
+    
+    # Query the 'Reviews' collection for the reviews of the recipe
     reviews_data = reviews_collection.find_one({'RecipeID': id})
 
+    # Define the default image URL
+    default_image_url = "/static/assets/img/food/zwk.png"
+
+    # Get the recipe image URL or use the default image URL
+    image_url = recipe_data.get('Image', default_image_url)
+
+    # Function to check if a field is empty and return "Not Available"
+    def check_field(value):
+        return value if value else "Not Available"
+
+    # Retrieve data from MySQL
+    with connections['default'].cursor() as cursor:
+        cursor.execute("SELECT Name, Description, MealType, Cuisine FROM recipe WHERE RecipeID = %s", [id])
+        mysql_data = cursor.fetchone()
+    
     # Combine the data from SQL and MongoDB into a single context dictionary
     context = {
         'recipe': {
             'RecipeID': id,
-            # 'Name': row[1],
-            # 'Description': row[2],
-            # 'MealType': row[3],
-            # 'Cuisine': row[4],
-            # 'Name': recipe_data['Name'],                # need to get from mysql
-            # 'Description': recipe_data['Description'],  # need to get from mysql
-            # 'Ingredients': recipe_data['Ingredients'],   # need to get from mysql
-            'Instructions': recipe_data['Instructions'],
-            'IngredientLines': recipe_data['Ingredient_Lines'],
-            'TotalTime': recipe_data['Total_Time'],
-            'Steps': recipe_data['Steps'],
-            'Image': recipe_data['Image'],
-            'Servings': nutrition_data['Servings'],
-            'Calories': nutrition_data['Calories'],
-            'Fats': nutrition_data['Total_Fats'],
-            'Sodium': nutrition_data['Sodium'],
-            'Carbohydrates': nutrition_data['Carbohydrates'],
-            'Protein': nutrition_data['Protein'],
-            'Reviews': reviews_data['Reviews'],
-            'OverallRating': reviews_data['Overall_Rating'],
+            'Name': check_field(mysql_data[0]),               # Get the Name from MySQL data
+            'Description': check_field(mysql_data[1]),        # Get the Description from MySQL data
+            'IngredientLines': recipe_data.get('Ingredient_Lines', []),
+            'Instructions': recipe_data.get('Instructions', []),
+            'TotalTime': check_field(recipe_data.get('Total_Time')),
+            'Steps': check_field(recipe_data.get('Steps')),
+            'Image': image_url,
+            'Servings': check_field(nutrition_data.get('Servings')),
+            'Calories': check_field(nutrition_data.get('Calories')),
+            'Fats': check_field(nutrition_data.get('Total_Fats')),
+            'Sodium': check_field(nutrition_data.get('Sodium')),
+            'Carbohydrates': check_field(nutrition_data.get('Carbohydrates')),
+            'Protein': check_field(nutrition_data.get('Protein')),
+            'Reviews': reviews_data.get('Reviews', []) if reviews_data else [],
+            'OverallRating': check_field(reviews_data.get('OverallRating')) if reviews_data else 'Not Available'
         }
     }
 
-    # Close client
+    # Close the MongoDB client
     mongo_client.close()
 
     return render(request, 'recipe/view_recipe.html', context)
