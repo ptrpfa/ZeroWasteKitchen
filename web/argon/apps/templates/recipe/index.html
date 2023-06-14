@@ -57,14 +57,14 @@
             {% endif %}
             <div class="col">
                 <div class="card">
-                    <img src="{{ recipe.img }}" class="card-img-top" alt="Recipe Image">
+                    <img src="{{ recipe.Image }}" class="card-img-top" alt="Recipe Image">
                     <div class="card-body">
                         <h5 class="card-title dish-name">{{ recipe.Name }}</h5>
                         <div class="tags">
                             <span class="badge bg-secondary">Cuisine: {{ recipe.Cuisine }}</span>
                             <span class="badge bg-secondary">Meal Type: {{ recipe.MealType }}</span>
                         </div>
-                        <p class="card-text description">{{ recipe.Description }}</p>
+                        <p class="card-text description"><strong>Description:</strong><br>{{ recipe.Description }}</p>
                         <div class="mt-auto text-end">
                             <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary">View This Recipe!</a>
                         </div>

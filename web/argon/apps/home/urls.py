@@ -11,5 +11,6 @@ urlpatterns = [
     path(r'recipe/', views.get_recipes, name='recipe'),
     path(r'recipe_details/', views.recipe_details, name='recipe_details'),
     path(r'test/', views.get_recipes, name='test'),
+    path(r'search/', views.search_recipes, name='search_recipes'),
     re_path (r'^.*\.html', views.pages, name='pages')                               # Matches any html file
 ]
