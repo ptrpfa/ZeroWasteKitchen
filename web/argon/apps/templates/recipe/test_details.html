@@ -34,7 +34,7 @@
               <div class="row">
                 <div class="col">
                   <h5 class="card-title text-uppercase text-muted mb-0">Cuisine</h5>
-                  <span class="h2 font-weight-bold mb-0">{{recipe.cuisine}}</span>
+                  <span class="h2 font-weight-bold mb-0">{{recipe.Cuisine}}</span>
                 </div>
                 <div class="col-auto">
                   <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
@@ -52,7 +52,7 @@
               <div class="row">
                 <div class="col">
                   <h5 class="card-title text-uppercase text-muted mb-0">Total Calorie</h5>
-                  <span class="h2 font-weight-bold mb-0">{{recipe.calorie}}</span>
+                  <span class="h2 font-weight-bold mb-0">{{recipe.Calories}}</span>
                 </div>
                 <div class="col-auto">
                   <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow">
@@ -69,8 +69,8 @@
             <div class="card-body">
               <div class="row">
                 <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Difficulty</h5>
-                  <span class="h2 font-weight-bold mb-0">{{recipe.difficulty}}</span>
+                  <h5 class="card-title text-uppercase text-muted mb-0">Number of Hours</h5>
+                  <span class="h2 font-weight-bold mb-0">{{recipe.TotalTime}}</span>
                 </div>
                 <div class="col-auto">
                   <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
@@ -88,7 +88,7 @@
               <div class="row">
                 <div class="col">
                   <h5 class="card-title text-uppercase text-muted mb-0">Ratings</h5>
-                  <span class="h2 font-weight-bold mb-0">{{recipe.ratings}}</span>
+                  <span class="h2 font-weight-bold mb-0">{{recipe.OverallRating}}</span>
                 </div>
                 <div class="col-auto">
                   <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
@@ -127,13 +127,37 @@
           <div class="row align-items-center">
             <div class="col">
               <h5 class="h3 mb-0">Description</h5>
-             <a>{{recipe.description}}</a>
+              <a>{{ recipe.Description }}</a>
             </div>
           </div>
         </div>
         <div class="card-body">
         </div>
       </div>
+
+      <div class="card">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Ingredients Needed</h3>
+              <ul>
+                {% for ingredient in recipe.IngredientLines %}
+                  <li>{{ ingredient }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <!-- Projects table -->
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+
+            </thead>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
   <div class="row">
@@ -144,8 +168,8 @@
             <div class="col">
               <h3 class="mb-0">Instructions</h3>
               <ol>
-                {% for instruction in recipe.instructions %}
-                  <li>{{ instruction }}</li>
+                {% for instruction in recipe.Instructions %}
+                  <li>{{ instruction.Description }}</li>
                 {% endfor %}
               </ol>
             </div>
@@ -160,35 +184,12 @@
         </table>
       </div>
     </div>
-    <div class="col-xl-4">
-        <div class="card">
-          <div class="card-header border-0">
-            <div class="row align-items-center">
-              <div class="col">
-                <h3 class="mb-0">Ingredients Needed</h3>
-                <ul>
-                    {% for ingredient in recipe.ingredients %}
-                      <li>{{ ingredient }}</li>
-                    {% endfor %}
-                  </ul>
-              </div>
-            </div>
-          </div>
-          <div class="table-responsive">
-            <!-- Projects table -->
-            <table class="table align-items-center table-flush">
-              <thead class="thead-light">
-
-              </thead>
-            </table>
-          </div>
-        </div>
-      </div>
   </div>
 
   {% include "includes/footer.html" %}
 
 </div>
+
 
 {% endblock content %}
 
