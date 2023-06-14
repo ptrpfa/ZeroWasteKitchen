@@ -445,7 +445,7 @@ def view_recipe(request, id):
             'Carbohydrates': check_field(nutrition_data.get('Carbohydrates')),
             'Protein': check_field(nutrition_data.get('Protein')),
             'Reviews': reviews_data.get('Reviews', []) if reviews_data else [],
-            'OverallRating': check_field(reviews_data.get('OverallRating')) if reviews_data else 'Not Available'
+            'OverallRating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else 'Not Available'
         }
     }
 
