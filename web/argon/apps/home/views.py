@@ -5,7 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
-from .models import Recipe
 from django.db import connection
 from django.shortcuts import render
 from core import settings
@@ -370,21 +369,31 @@ def get_recipes(request):
         cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 10")
         rows = cursor.fetchall()
 
+    # Connect to MongoDB
+    mongo_client, db_conn = settings.get_mongodb()
+    instructions_collection = db_conn['Instructions']
+
     recipes = []
     for row in rows:
+        recipe_id = row[0]
+        instruction = instructions_collection.find_one({'RecipeID': recipe_id})
+        image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
+
         recipe = {
-            'RecipeID': row[0],
+            'RecipeID': recipe_id,
             'Name': row[1],
             'Description': row[2],
             'MealType': row[3],
             'Cuisine': row[4],
+            'Image': image_url,
         }
         recipes.append(recipe)
 
+    # Close the MongoDB client
+    mongo_client.close()
+
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
-
-from django.db import connections
 
 @login_required(login_url="/login/")
 def view_recipe(request, id):
@@ -418,12 +427,12 @@ def view_recipe(request, id):
         cursor.execute("SELECT Name, Description, MealType, Cuisine FROM recipe WHERE RecipeID = %s", [id])
         mysql_data = cursor.fetchone()
     
-    # Combine the data from SQL and MongoDB into a single context dictionary
+    # Combine the data from SQL and MongoDB 
     context = {
         'recipe': {
             'RecipeID': id,
-            'Name': check_field(mysql_data[0]),               # Get the Name from MySQL data
-            'Description': check_field(mysql_data[1]),        # Get the Description from MySQL data
+            'Name': check_field(mysql_data[0]),               
+            'Description': check_field(mysql_data[1]),       
             'IngredientLines': recipe_data.get('Ingredient_Lines', []),
             'Instructions': recipe_data.get('Instructions', []),
             'TotalTime': check_field(recipe_data.get('Total_Time')),
