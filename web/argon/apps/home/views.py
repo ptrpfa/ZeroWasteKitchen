@@ -8,9 +8,7 @@ from django.urls import reverse
 from .models import Recipe
 from django.db import connection
 from django.shortcuts import render
-from utils import *
-
-
+from django.conf import settings
 
 @login_required(login_url="/login/")
 def index(request):
@@ -368,7 +366,6 @@ def recipe_details(request):
         return HttpResponse('Recipe not found!')
     
 @login_required(login_url="/login/")
-
 def get_recipes(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 10")
@@ -390,15 +387,15 @@ def get_recipes(request):
     return render(request, 'recipe/index.html', context)
 
 
-def view_recipe(request, RecipeID):
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM recipe WHERE RecipeID = %s", [RecipeID])
-        row = cursor.fetchone()
+@login_required(login_url="/login/")
+def view_recipe(request, id):
+    # Get the 'Instructions' collection from MongoDB
+    instructions_collection = settings.get_collection('Instructions')
 
-    recipe_collection = get_collection('instructions')
-    recipe_data = recipe_collection.find_one({'RecipeID': RecipeID})
+    # Query the 'Instructions' collection for the recipe with the specified RecipeID
+    recipe_data = instructions_collection.find_one({'RecipeID': id})
 
-    # Combine the data from SQL and MongoDB
+    # Combine the data from SQL and MongoDB into a single context dictionary
     context = {
         'recipe': {
             'RecipeID': RecipeID,
