@@ -3,17 +3,20 @@ from pymongo import MongoClient
 
 # Function to get MongoDB database connection
 def get_mongodb():
-    client = MongoClient(config('MONGODB_URI'))
-    return client[config('MONGODB_NAME')]
+    return MongoClient(config('MONGODB_URI'))
 
 # Function to get MongoDB collections
 def get_collection(name=''):
-    db_conn = get_mongodb()
+    mongo_client = get_mongodb()
+    db_conn = mongo_client[config('MONGODB_NAME')]
+    results = None
     if(name.lower() == 'instructions'):
-        return db_conn['Instructions']
+        results = db_conn['Instructions']
     elif(name.lower() == 'reviews'):
-        return db_conn['Reviews']
+        results = db_conn['Reviews']
     elif(name.lower() == 'nutrition'):
-        return db_conn['Nutrition']
+        results = db_conn['Nutrition']
     else:
-        return { "Instructions": db_conn['Instructions'], "Reviews": db_conn['Reviews'], "Nutrition": db_conn['Nutrition'] }
+        results = { "Instructions": db_conn['Instructions'], "Reviews": db_conn['Reviews'], "Nutrition": db_conn['Nutrition'] }
+    mongo_client.close()
+    return results
