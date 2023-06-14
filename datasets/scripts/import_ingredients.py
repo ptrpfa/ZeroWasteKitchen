@@ -19,21 +19,21 @@ cursor = connection.cursor()
 ingredients = pd.read_csv(CSV_FILE_INGREDIENTS)   
 recipeingredient = pd.read_csv(CSV_FILE_RECIPE_INGREDIENT)  
 
-for row in ingredients.itertuples():
-    ingredient_id = int(row.IngredientID)
-    name = row.Name
-    category = row.Category
+# for row in ingredients.itertuples():
+#     ingredient_id = int(row.IngredientID)
+#     name = row.Name
+#     category = row.Category
 
-    print(ingredient_id)
+#     print(ingredient_id)
 
-    cursor.execute(
-        '''
-        INSERT INTO ingredient (IngredientID, Name, Category)
-        VALUES (%s, %s, %s)
-        ''',
-        (ingredient_id, name, category)
-    )
-    connection.commit()
+#     cursor.execute(
+#         '''
+#         INSERT INTO ingredient (IngredientID, Name, Category)
+#         VALUES (%s, %s, %s)
+#         ''',
+#         (ingredient_id, name, category)
+#     )
+#     connection.commit()
 
 # print("Now Inserting Recipe Ingredient Mapping\n")
 
