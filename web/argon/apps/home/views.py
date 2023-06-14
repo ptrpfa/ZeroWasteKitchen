@@ -8,7 +8,7 @@ from django.urls import reverse
 from .models import Recipe
 from django.db import connection
 from django.shortcuts import render
-from django.conf import settings
+from core import settings
 
 @login_required(login_url="/login/")
 def index(request):
@@ -44,7 +44,6 @@ def pages(request):
 
 @login_required(login_url="/login/")
 def recipe_view(request, cuisine=None):
-    print("here!")
     data = [
     {
         'cuisine': 'Italian',
@@ -371,7 +370,6 @@ def get_recipes(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 10")
         rows = cursor.fetchall()
-
     # Process the query results
     recipes = []
     for row in rows:
@@ -388,11 +386,11 @@ def get_recipes(request):
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
 
-
 @login_required(login_url="/login/")
 def view_recipe(request, id):
     # Get the 'Instructions' collection from MongoDB
-    instructions_collection = settings.get_collection('Instructions')
+    mongo_client, db_conn = settings.get_mongodb()
+    instructions_collection = db_conn['Instructions']
 
     # Query the 'Instructions' collection for the recipe with the specified RecipeID
     recipe_data = instructions_collection.find_one({'RecipeID': id})
@@ -401,9 +399,9 @@ def view_recipe(request, id):
     context = {
         'recipe': {
             'RecipeID': id,
-            'Name': recipe_data['Name'],
-            'Description': recipe_data['Description'],
-            'Ingredients': recipe_data['Ingredients'],
+            # 'Name': recipe_data['Name'],                # need to get from mysql
+            # 'Description': recipe_data['Description'],  # need to get from mysql
+            # 'Ingredients': recipe_data['Ingredients'],   # need to get from mysql
             'Instructions': recipe_data['Instructions'],
             'Total_Time': recipe_data['Total_Time'],
             'Steps': recipe_data['Steps'],
@@ -411,6 +409,9 @@ def view_recipe(request, id):
             # Add other relevant fields from MongoDB
         }
     }
+
+    # Close client
+    mongo_client.close()
 
     return render(request, 'recipe/view_recipe.html', context)
 
