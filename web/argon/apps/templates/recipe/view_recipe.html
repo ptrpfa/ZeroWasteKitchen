@@ -53,25 +53,27 @@
             <div class="recipe-ingredient-list">
                 <h3>Ingredients</h3>
                 <ul>
-                    {% for ingredient in recipe.Ingredient_Lines %}
+                    {% for ingredient in recipe.IngredientLines %}
                         <li>{{ ingredient }}</li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="recipe-instructions">
                 <h3>Instructions</h3>
-                <p>{{ recipe.Instructions }}</p>
+                <ol>
+                    {% for instruction in recipe.Instructions %}
+                        <li>{{ instruction }}</li>
+                    {% endfor %}
+                </ol>
             </div>
             <div class="recipe-total-time">
                 <h3>Total Time</h3>
-                <p>{{ recipe.Total_Time }}</p>
+                <p>{{ recipe.TotalTime }}</p>
             </div>
             <div class="recipe-steps">
                 <h3>Steps</h3>
                 <ol>
-                    {% for step in recipe.Steps %}
-                        <li>{{ step }}</li>
-                    {% endfor %}
+                    <li>Number of steps:{{ step }}</li>
                 </ol>
             </div>
         </div>
