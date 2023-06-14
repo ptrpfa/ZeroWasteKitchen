@@ -1,84 +1,175 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Recipe Details</title>
-   
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
-    <style>
-        .card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100%;    
-        }
+{% extends 'layouts/base.html' %}
 
-        .card-body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-        }
+{% block title %}Recipe Details{% endblock title %}
 
-        .tag-image {
-            width: 20px;
-            height: 20px;
-            margin-right: 5px;
-        }
-        
-        .card-img-top {
-            object-fit: cover;
-            height: 200px;
-            width: 100%;
-        }
-        
-        .dish-name {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        
-        .description {
-            height: 80px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 4;
-            -webkit-box-orient: vertical;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="mt-5">Recipe Details</h1>
-        <div class="recipe-row">
-            {% for recipe in recipes %}
-            {% if forloop.counter0|divisibleby:4 %}
-            <div class="row row-cols-1 row-cols-md-4 g-4">
-            {% endif %}
-            <div class="col">
-                <div class="card">
-                    <img src="{{ recipe.Image }}" class="card-img-top" alt="Recipe Image">
-                    <div class="card-body">
-                        <h5 class="card-title dish-name">{{ recipe.Name }}</h5>
-                        <div class="tags">
-                            <span class="badge bg-secondary">Cuisine: {{ recipe.Cuisine }}</span>
-                            <span class="badge bg-secondary">Meal Type: {{ recipe.MealType }}</span>
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+<style>
+    .card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+    }
+
+    .card-body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tag-image {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+    }
+
+    .card-img-top {
+        object-fit: cover;
+        height: 200px;
+        width: 100%;
+    }
+
+    .dish-name {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .description {
+        height: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        color: lightgrey;
+        font-style: italic;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="header bg-gradient-primary pb-8 pt-5">
+    <div class="container-fluid">
+        <div class="header-body">
+            <!-- Card stats -->
+            <div class="row">
+                <!-- Recipe count -->
+                <div class="col-xl-3 col-lg-6">
+                    <div class="card card-stats mb-4 mb-xl-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Recipes</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{ results.recipe_count|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                                        <i class="fas fa-hamburger"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <p class="card-text description"><strong>Description:</strong><br>{{ recipe.Description }}</p>
-                        <div class="mt-auto text-end">
-                            <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary">View This Recipe!</a>
+                    </div>
+                </div>
+                <!-- Cuisine count -->
+                <div class="col-xl-3 col-lg-6">
+                    <div class="card card-stats mb-4 mb-xl-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Cuisines</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{ results.cuisine_count|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Reviews count -->
+                <div class="col-xl-3 col-lg-6">
+                    <div class="card card-stats mb-4 mb-xl-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Recipe Reviews</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{ results.review_count|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-yellow text-white rounded-circle shadow">
+                                        <i class="fas fa-comments"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Average review rating -->
+                <div class="col-xl-3 col-lg-6">
+                    <div class="card card-stats mb-4 mb-xl-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Recipe Ratings</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{ results.review_score|default:0 }}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            {% if forloop.counter|divisibleby:4 or forloop.last %}
-            </div>
-            {% endif %}
-            {% endfor %}
         </div>
     </div>
+</div>
 
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<div class="container">
+    <h1 class="mt-5">Recipe Details</h1>
+    <div class="recipe-row">
+        {% for recipe in recipes %}
+        {% if forloop.counter0|divisibleby:4 %}
+        <div class="row row-cols-1 row-cols-md-4 g-4">
+        {% endif %}
+        <div class="col">
+            <div class="card">
+                <img src="{{ recipe.Image }}" class="card-img-top" alt="Recipe Image">
+                <div class="card-body">
+                    <h5 class="card-title dish-name">{{ recipe.Name }}</h5>
+                    <div class="tags">
+                        <span class="badge bg-secondary">Cuisine: {{ recipe.Cuisine }}</span>
+                        <span class="badge bg-secondary">Meal Type: {{ recipe.MealType }}</span>
+                    </div>
+                    <p class="card-text description"><strong>Description:</strong><br>{{ recipe.Description }}</p>
+                    <div class="mt-auto text-end">
+                        <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary">View This Recipe!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if forloop.counter|divisibleby:4 or forloop.last %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+{% endblock javascripts %}
+
+{% endblock content %}
