@@ -8,8 +8,7 @@ from django.urls import reverse
 from .models import Recipe
 from django.db import connection
 from django.shortcuts import render
-from .utils import connect_to_mongodb, get_collection
-
+from django.conf import settings
 
 @login_required(login_url="/login/")
 def index(request):
@@ -367,7 +366,6 @@ def recipe_details(request):
         return HttpResponse('Recipe not found!')
     
 @login_required(login_url="/login/")
-
 def get_recipes(request):
     # Execute the raw SQL query
     with connection.cursor() as cursor:
@@ -391,13 +389,10 @@ def get_recipes(request):
     return render(request, 'recipe/index.html', context)
 
 
-
+@login_required(login_url="/login/")
 def view_recipe(request, id):
-    # Establish a connection to MongoDB
-    db = connect_to_mongodb()
-
     # Get the 'Instructions' collection from MongoDB
-    instructions_collection = get_collection('Instructions')
+    instructions_collection = settings.get_collection('Instructions')
 
     # Query the 'Instructions' collection for the recipe with the specified RecipeID
     recipe_data = instructions_collection.find_one({'RecipeID': id})
