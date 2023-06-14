@@ -366,11 +366,10 @@ def recipe_details(request):
     
 @login_required(login_url="/login/")
 def get_recipes(request):
-    # Execute the raw SQL query
     with connection.cursor() as cursor:
         cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 10")
         rows = cursor.fetchall()
-    # Process the query results
+
     recipes = []
     for row in rows:
         recipe = {
@@ -382,7 +381,6 @@ def get_recipes(request):
         }
         recipes.append(recipe)
 
-    # Pass the recipes data to the template
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
 
@@ -399,14 +397,18 @@ def view_recipe(request, id):
     context = {
         'recipe': {
             'RecipeID': id,
+            # 'Name': row[1],
+            # 'Description': row[2],
+            # 'MealType': row[3],
+            # 'Cuisine': row[4],
             # 'Name': recipe_data['Name'],                # need to get from mysql
             # 'Description': recipe_data['Description'],  # need to get from mysql
             # 'Ingredients': recipe_data['Ingredients'],   # need to get from mysql
             'Instructions': recipe_data['Instructions'],
-            'Total_Time': recipe_data['Total_Time'],
+            'IngredientLines': recipe_data['Ingredient_Lines'],
+            'TotalTime': recipe_data['Total_Time'],
             'Steps': recipe_data['Steps'],
             'Image': recipe_data['Image'],
-            # Add other relevant fields from MongoDB
         }
     }
 
@@ -414,9 +416,3 @@ def view_recipe(request, id):
     mongo_client.close()
 
     return render(request, 'recipe/view_recipe.html', context)
-
-
-
-
-
-
