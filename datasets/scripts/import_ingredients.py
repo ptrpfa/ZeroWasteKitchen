@@ -37,19 +37,19 @@ recipeingredient = pd.read_csv(CSV_FILE_RECIPE_INGREDIENT)
 
 # print("Now Inserting Recipe Ingredient Mapping\n")
 
-# for row in recipeingredient.itertuples():
-#     ingredient_id = int(row.IngredientID)
-#     recipe_id = int(row.RecipeID)
+for row in recipeingredient.itertuples():
+    ingredient_id = int(row.IngredientID)
+    recipe_id = int(row.RecipeID)
+    print(recipe_id)
+    cursor.execute(
+        '''
+        INSERT INTO recipeingredient (RecipeID, IngredientID)
+        VALUES (%s, %s)
+        ''',
+        (recipe_id, ingredient_id)
+    )
 
-#     cursor.execute(
-#         '''
-#         INSERT INTO recipeingredient (RecipeID, IngredientID)
-#         VALUES (%s, %s)
-#         ''',
-#         (recipe_id, ingredient_id)
-#     )
-
-#     connection.commit()
+    connection.commit()
 
 connection.close()
 print('CSV data inserted into MySQL table successfully.')
