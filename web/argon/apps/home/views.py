@@ -112,6 +112,8 @@ def view_recipe(request, id):
             'RecipeID': id,
             'Name': check_field(mysql_data[0]),               
             'Description': check_field(mysql_data[1]),       
+            'MealType': check_field(mysql_data[2]),  # Add the 'MealType' field from MySQL
+            'Cuisine': check_field(mysql_data[3]),   # Add the 'Cuisine' field from MySQL
             'IngredientLines': recipe_data.get('Ingredient_Lines', []),
             'Instructions': recipe_data.get('Instructions', []),
             'TotalTime': check_field(recipe_data.get('Total_Time')),
@@ -124,7 +126,7 @@ def view_recipe(request, id):
             'Carbohydrates': check_field(nutrition_data.get('Carbohydrates')),
             'Protein': check_field(nutrition_data.get('Protein')),
             'Reviews': reviews_data.get('Reviews', []) if reviews_data else [],
-            'OverallRating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else 'Not Available'
+            'Overall_Rating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else 'Not Available'
         }
     }
 
@@ -132,6 +134,7 @@ def view_recipe(request, id):
     mongo_client.close()
 
     return render(request, 'recipe/view_recipe.html', context)
+
 
 @login_required(login_url="/login/")
 def search_recipes(request):
