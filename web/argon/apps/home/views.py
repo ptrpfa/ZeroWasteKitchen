@@ -8,7 +8,8 @@ from django.urls import reverse
 from .models import Recipe
 from django.db import connection
 from django.shortcuts import render
-from .utils import connect_to_mongodb, get_collection
+from utils import *
+
 
 
 @login_required(login_url="/login/")
@@ -369,12 +370,11 @@ def recipe_details(request):
 @login_required(login_url="/login/")
 
 def get_recipes(request):
-    # Execute the raw SQL query
     with connection.cursor() as cursor:
         cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 10")
         rows = cursor.fetchall()
 
-    # Process the query results
+
     recipes = []
     for row in rows:
         recipe = {
@@ -386,41 +386,32 @@ def get_recipes(request):
         }
         recipes.append(recipe)
 
-    # Pass the recipes data to the template
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
 
 
+def view_recipe(request, RecipeID):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM recipe WHERE RecipeID = %s", [RecipeID])
+        row = cursor.fetchone()
 
-def view_recipe(request, id):
-    # Establish a connection to MongoDB
-    db = connect_to_mongodb()
+    recipe_collection = get_collection('instructions')
+    recipe_data = recipe_collection.find_one({'RecipeID': RecipeID})
 
-    # Get the 'Instructions' collection from MongoDB
-    instructions_collection = get_collection('Instructions')
-
-    # Query the 'Instructions' collection for the recipe with the specified RecipeID
-    recipe_data = instructions_collection.find_one({'RecipeID': id})
-
-    # Combine the data from SQL and MongoDB into a single context dictionary
+    # Combine the data from SQL and MongoDB
     context = {
         'recipe': {
-            'RecipeID': id,
-            'Name': recipe_data['Name'],
-            'Description': recipe_data['Description'],
-            'Ingredients': recipe_data['Ingredients'],
+            'RecipeID': RecipeID,
+            'Name': row[1],
+            'Description': row[2],
+            'MealType': row[3],
+            'Cuisine': row[4],
             'Instructions': recipe_data['Instructions'],
-            'Total_Time': recipe_data['Total_Time'],
+            'IngredientLines': recipe_data['Ingredient_Lines'],
+            'TotalTime': recipe_data['Total_Time'],
             'Steps': recipe_data['Steps'],
             'Image': recipe_data['Image'],
-            # Add other relevant fields from MongoDB
         }
     }
 
     return render(request, 'recipe/view_recipe.html', context)
-
-
-
-
-
-
