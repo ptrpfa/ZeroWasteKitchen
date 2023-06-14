@@ -444,7 +444,6 @@ def view_recipe(request, id):
     mongo_client.close()
 
     return render(request, 'recipe/view_recipe.html', context)
-<<<<<<< HEAD
 
 @login_required(login_url="/login/")
 def search_recipes(request):
@@ -452,5 +451,3 @@ def search_recipes(request):
 
     html_template = loader.get_template('recipe/search.html')
     return HttpResponse(html_template.render(context, request))
-=======
->>>>>>> f22be9ae36f92470f698bc107d48d13d9c5fccb8
