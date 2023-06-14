@@ -389,9 +389,17 @@ def view_recipe(request, id):
     # Get the 'Instructions' collection from MongoDB
     mongo_client, db_conn = settings.get_mongodb()
     instructions_collection = db_conn['Instructions']
+    nutrition_collection = db_conn['Nutrition']
+    reviews_collection = db_conn['Reviews']
 
     # Query the 'Instructions' collection for the recipe with the specified RecipeID
     recipe_data = instructions_collection.find_one({'RecipeID': id})
+
+    # Query the 'Nutrition' collection for the nutrition information of the recipe
+    nutrition_data = nutrition_collection.find_one({'RecipeID': id})
+
+    # Query the 'Reviews' collection for the reviews of the recipe with the specified RecipeID
+    reviews_data = reviews_collection.find_one({'RecipeID': id})
 
     # Combine the data from SQL and MongoDB into a single context dictionary
     context = {
@@ -409,6 +417,14 @@ def view_recipe(request, id):
             'TotalTime': recipe_data['Total_Time'],
             'Steps': recipe_data['Steps'],
             'Image': recipe_data['Image'],
+            'Servings': nutrition_data['Servings'],
+            'Calories': nutrition_data['Calories'],
+            'Fats': nutrition_data['Total_Fats'],
+            'Sodium': nutrition_data['Sodium'],
+            'Carbohydrates': nutrition_data['Carbohydrates'],
+            'Protein': nutrition_data['Protein'],
+            'Reviews': reviews_data['Reviews'],
+            'OverallRating': reviews_data['Overall_Rating'],
         }
     }
 
