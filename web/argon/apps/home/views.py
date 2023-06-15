@@ -152,6 +152,16 @@ def view_recipe(request, id):
     return render(request, 'recipe/view_recipe.html', context)
 
 @login_required(login_url="/login/")
+def add_to_user_recipe(request, recipe_id):
+    if request.method == 'POST':
+        user_id = request.user.id
+        with connection.cursor() as cursor:
+            cursor.execute("INSERT INTO userrecipe (UserID, RecipeID) VALUES (%s, %s)", [user_id, recipe_id])
+        return redirect('recipe', recipe_id=recipe_id)
+    else:
+        return redirect('home')
+
+@login_required(login_url="/login/")
 def search_recipes(request):
     """ 
     Base SQL (view all recipes):
@@ -298,4 +308,5 @@ def process_search (request):
     json_response = json.dumps(json_response)
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
+
 
