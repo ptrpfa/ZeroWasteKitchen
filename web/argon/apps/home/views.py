@@ -9,6 +9,21 @@ from django.db import connection, connections
 from django.shortcuts import render
 from core import settings
 from django.db import connections
+import re, html, json
+
+def clean_input (input_value):
+        
+    # Decode HTML encoded characters (&amp; -> &)
+    input_value = html.unescape (input_value)
+
+    # Remove heading and trailing whitespaces
+    input_value = input_value.strip ()
+
+    # Remove invalid characters
+    input_value = re.sub (r"[\[\];\'\"|\\]", "", input_value) 
+
+    # Return cleaned input
+    return input_value
 
 @login_required(login_url="/login/")
 def index(request):
@@ -138,14 +153,17 @@ def view_recipe(request, id):
 
 @login_required(login_url="/login/")
 def search_recipes(request):
-
     # Get MongoDB connections
     mongo_client, mongo_conn = settings.get_mongodb()
     reviews = mongo_conn['Reviews']
+    instructions = mongo_conn['Instructions']
 
     # Initialise context variables
     recipe_count = None
     cuisine_count = None
+    review_count = None
+    review_score = None
+    recipes = []
 
     # Get context values
     with connection.cursor() as cursor:
@@ -153,10 +171,27 @@ def search_recipes(request):
         recipe_count = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
         cuisine_count = cursor.fetchone()[0]
+        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 12")
+        rows = cursor.fetchall()
+
+    for row in rows:
+        recipe_id = row[0]
+        instruction = instructions.find_one({'RecipeID': recipe_id})
+        image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
+
+        recipe = {
+            'RecipeID': recipe_id,
+            'Name': row[1],
+            'Description': row[2],
+            'MealType': row[3],
+            'Cuisine': row[4],
+            'Image': image_url,
+        }
+        recipes.append(recipe)
 
     review_count = reviews.count_documents({})
     review_score = reviews.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
-    
+
     # Prepare context
     context = {
                 'segment': 'search_recipe',
@@ -165,7 +200,8 @@ def search_recipes(request):
                         'cuisine_count': cuisine_count,
                         'review_count': review_count,
                         'review_score': review_score,
-                    }
+                    },
+                'recipes': recipes
             }
 
     # Close connections
@@ -174,3 +210,8 @@ def search_recipes(request):
     # Render template
     html_template = loader.get_template('recipe/search.html')
     return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")  
+def process_search (request):  # View for processing search
+    return {"hello"}
+    

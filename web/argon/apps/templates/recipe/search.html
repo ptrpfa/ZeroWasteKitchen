@@ -1,14 +1,26 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %} Icons {% endblock title %}
+{% block title %} Recipe Search {% endblock title %}
 
 <!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+<style>
+  .custom-gradient {
+    background: linear-gradient(135deg, #FF7F50 0%, #FF4E50 100%);
+  }
+  .card-img-top {
+        object-fit: cover;
+        height: 200px;
+        width: 100%;
+    }
+</style>
+{% endblock stylesheets %}
 
 {% block content %}
 
     <!-- Header -->
-    <div class="header bg-gradient-primary pb-8 pt-5">
+    <div class="header custom-gradient pb-8 pt-5">
       <div class="container-fluid">
         <div class="header-body">
           <!-- Card stats -->
@@ -19,10 +31,10 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Recipes</h5>
+                      <p class="card-title text-muted mb-0">Recipes</p>
                       <span class="h2 font-weight-bold mb-0">{{ results.recipe_count|default:0 }}</span>
                     </div>
-                    <div class="col-auto">
+                    <div class="col-auto align-middle">
                       <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
                         <i class="fas fa-hamburger"></i>
                       </div>
@@ -37,10 +49,10 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Cuisines</h5>
+                      <p class="card-title text-muted mb-0">Cuisines</p>
                       <span class="h2 font-weight-bold mb-0">{{ results.cuisine_count|default:0 }}</span>
                     </div>
-                    <div class="col-auto">
+                    <div class="col-auto align-middle">
                       <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
                         <i class="fas fa-utensils"></i>
                       </div>
@@ -55,11 +67,11 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Recipe Reviews</h5>
+                      <p class="card-title text-muted mb-0">Reviews</p>
                       <span class="h2 font-weight-bold mb-0">{{ results.review_count|default:0 }}</span>
                     </div>
-                    <div class="col-auto">
-                      <div class="icon icon-shape bg-yellow text-white rounded-circle shadow">
+                    <div class="col-auto align-middle">
+                      <div class="icon icon-shape bg-green text-white rounded-circle shadow">
                         <i class="fas fa-comments"></i>
                       </div>
                     </div>
@@ -73,10 +85,10 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Recipe Ratings</h5>
+                      <p class="card-title text-muted mb-0">Average Rating</p>
                       <span class="h2 font-weight-bold mb-0">{{ results.review_score|default:0 }}</span>
                     </div>
-                    <div class="col-auto">
+                    <div class="col-auto align-middle">
                       <div class="icon icon-shape bg-info text-white rounded-circle shadow">
                         <i class="fas fa-star"></i>
                       </div>
@@ -90,25 +102,27 @@
       </div>
     </div>
 
-    <!-- Search bar -->
+    <!-- Search -->
     <div class="container-fluid mt--7">
       <div class="row">
         <div class="col">
           <div class="card shadow">
-            <div class="card-header bg-transparent">
-              <h3 class="mb-0">What ingredients do you have?</h3>
-            </div>
             <div class="card-body">
+              <!-- Search Bar -->
+              <h4 class="mb-4">What ingredients do you have?</h4>
               <div class="input-group input-group-alternative input-group-merge">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="fas fa-search"></i></span>
                 </div>
-                <input class="form-control" placeholder="Search" type="text" id="search_bar">
+                <input class="form-control" placeholder="Enter each ingredient you have here.." type="text" id="search_bar" style="padding-left: 1.5em">
               </div>
-              <div class="input-group input-group-alternative input-group-merge" id="user_input">
+
+              <!-- Filters -->
+              <div class="input-group input-group-alternative input-group-merge mt-5" id="user_input">
                 You entered
                 ...
               </div>
+            </div>
           </div>
         </div>
       </div>
@@ -116,20 +130,51 @@
 
     <!-- Results -->
     <div class="container-fluid">
-      <div class="row">
-        <div class="col">
-          <div class="card shadow">
-            <div class="card-header bg-transparent">
-              <h3 class="mb-0">Results</h3>
-            </div>
-            <div class="card-body">
-              something here
-            </div>
+      <h4 class="mb-3">You can make {{results.recipe_count|default:0}} recipes!</h4>
+      {% for recipe in recipes %}
+        {% if forloop.counter0|divisibleby:4 %}
+          <div class="row row-cols-1 row-cols-md-4 g-4">
+          {% endif %}
+          
+          <div class="col mb-4">
+              <div class="card h-100">
+                    <img src="{{ recipe.Image }}" class="card-img-top" alt="Recipe Image">
+                    <div class="card-header d-flex pt-3 bg-light">
+                      <h5 class="card-title text-center align-middle">{{ recipe.Name }}</h5>
+                    </div>
+                    <div class="card-body pt-2">
+                        <span class="badge bg-success mb-2">{{ recipe.Cuisine }}</span>
+                        <p>{{ recipe.Description|truncatechars:100 }}..</p>             
+                    </div>
+                    <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-block btn-primary b-0" style="transform: none;">View Recipe</a>
+              </div>
           </div>
-        </div>
-      </div>
-      
+        {% if forloop.counter|divisibleby:4 or forloop.last %}
+          </div>
+        {% endif %}
+      {% endfor %}
     </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation example">
+      <ul class="pagination">
+        <li class="page-item">
+          <a class="page-link" href="#" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+            <span class="sr-only">Previous</span>
+          </a>
+        </li>
+        <li class="page-item"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item">
+          <a class="page-link" href="#" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+            <span class="sr-only">Next</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
     
     {% include "includes/footer.html" %}
 
@@ -137,7 +182,7 @@
 
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
-
-<script src="/static/assets/vendor/clipboard/dist/clipboard.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 {% endblock javascripts %}
+
+
