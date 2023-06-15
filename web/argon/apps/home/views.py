@@ -237,7 +237,9 @@ def search_recipes(request):
 @post_request_only
 def process_search (request): 
     # Get POST data
-    offset = (int(request.POST.get("current_page", "")) - 1) * 12 # SQL offset
+    offset = (int(request.POST.get("current_page", 0)) - 1) * 12       # Current offset
+    new_offset = (int(request.POST.get("next_page", 0)) - 1) * 12      # New offset
+    list_search_terms = request.POST.get("search", "")                  # Search terms
 
     """ 
     Base SQL (view all recipes):
@@ -247,6 +249,12 @@ def process_search (request):
     LIMIT 12
     OFFSET xx
     """
+    # Prepare base query
+    base_query = "SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET %s;"
+    if(new_offset >= 0):
+        base_query = base_query % new_offset
+    else:
+        base_query = base_query % offset
 
     # Get MongoDB connections
     mongo_client, mongo_conn = settings.get_mongodb()
@@ -266,22 +274,21 @@ def process_search (request):
         recipe_count = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
         cuisine_count = cursor.fetchone()[0]
-        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET %s;" % offset)
+        cursor.execute(base_query)
         rows = cursor.fetchall()
-
-    for row in rows:
-        recipe_id = row[0]
-        instruction = instructions.find_one({'RecipeID': recipe_id})
-        image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
-        recipe = {
-            'RecipeID': recipe_id,
-            'Name': row[1],
-            'Description': row[2],
-            'MealType': row[3],
-            'Cuisine': row[4],
-            'Image': image_url,
-        }
-        recipes.append(recipe)
+        for row in rows:
+            recipe_id = row[0]
+            instruction = instructions.find_one({'RecipeID': recipe_id})
+            image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
+            recipe = {
+                'RecipeID': recipe_id,
+                'Name': row[1],
+                'Description': row[2],
+                'MealType': row[3],
+                'Cuisine': row[4],
+                'Image': image_url,
+            }
+            recipes.append(recipe)
 
     review_count = reviews.count_documents({})
     review_score = reviews.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
@@ -296,17 +303,30 @@ def process_search (request):
                         'review_score': review_score,
                         'page_count': math.ceil(recipe_count / 12),
                         'pages': [ i for i in range(1, math.ceil(recipe_count / 12) + 1)],
-                        'current_page': (offset / 12) + 1
                     },
                 'recipes': recipes
             }
+    
+    if(new_offset >= 0):
+        json_response['results']['current_page'] = (new_offset / 12) + 1
+    else:
+        json_response['results']['current_page'] = (offset / 12) + 1
 
     # Close connections
     mongo_client.close()
+
+    # Debugging
+    print("POST Data:")
+    print("Current offset:", offset)
+    print("New offset:", new_offset)
+    print("Search terms:", list_search_terms)
+    print("SQL:", base_query)
+    # print("Response:", json_response)
+
 
     # Return response
     json_response = json.dumps(json_response)
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
-
+    
