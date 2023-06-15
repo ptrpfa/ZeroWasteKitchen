@@ -12,8 +12,13 @@ from django.db import connections
 from .decorators import post_request_only
 import re, html, json, math
 
-def clean_input (input_value):
-        
+# Initialise global MongoDB connections
+mongo_client, mongo_conn = settings.get_mongodb()
+instructions_collection = mongo_conn['Instructions']
+reviews_collection = mongo_conn['Reviews']
+nutrition_collection = mongo_conn['Nutrition']
+
+def clean_input (input_value):     
     # Decode HTML encoded characters (&amp; -> &)
     input_value = html.unescape (input_value)
 
@@ -64,10 +69,6 @@ def get_recipes(request):
         cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RAND() LIMIT 10")
         rows = cursor.fetchall()
 
-    # Connect to MongoDB
-    mongo_client, mongo_conn = settings.get_mongodb()
-    instructions_collection = mongo_conn['Instructions']
-
     recipes = []
     for row in rows:
         recipe_id = row[0]
@@ -84,20 +85,11 @@ def get_recipes(request):
         }
         recipes.append(recipe)
 
-    # Close the MongoDB client
-    mongo_client.close()
-
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
 
 @login_required(login_url="/login/")
 def view_recipe(request, id):
-    # Get the 'Instructions' collection from MongoDB
-    mongo_client, mongo_conn = settings.get_mongodb()
-    instructions_collection = mongo_conn['Instructions']
-    nutrition_collection = mongo_conn['Nutrition']
-    reviews_collection = mongo_conn['Reviews']
-
     # Query the 'Instructions' collection for the recipe with the specified RecipeID
     recipe_data = instructions_collection.find_one({'RecipeID': id})
     
@@ -146,9 +138,6 @@ def view_recipe(request, id):
         }
     }
 
-    # Close the MongoDB client
-    mongo_client.close()
-
     return render(request, 'recipe/view_recipe.html', context)
 
 @login_required(login_url="/login/")
@@ -172,11 +161,6 @@ def search_recipes(request):
     OFFSET xx
     """
 
-    # Get MongoDB connections
-    mongo_client, mongo_conn = settings.get_mongodb()
-    reviews = mongo_conn['Reviews']
-    instructions = mongo_conn['Instructions']
-
     # Initialise context variables
     recipe_count = None
     cuisine_count = None
@@ -195,7 +179,7 @@ def search_recipes(request):
 
     for row in rows:
         recipe_id = row[0]
-        instruction = instructions.find_one({'RecipeID': recipe_id})
+        instruction = instructions_collection.find_one({'RecipeID': recipe_id})
         image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
 
         recipe = {
@@ -208,8 +192,8 @@ def search_recipes(request):
         }
         recipes.append(recipe)
 
-    review_count = reviews.count_documents({})
-    review_score = reviews.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
+    review_count = reviews_collection.count_documents({})
+    review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
 
     # Prepare context
     context = {
@@ -225,9 +209,6 @@ def search_recipes(request):
                     },
                 'recipes': recipes
             }
-
-    # Close connections
-    mongo_client.close()
 
     # Render template
     html_template = loader.get_template('recipe/search.html')
@@ -256,11 +237,6 @@ def process_search (request):
     else:
         base_query = base_query % offset
 
-    # Get MongoDB connections
-    mongo_client, mongo_conn = settings.get_mongodb()
-    reviews = mongo_conn['Reviews']
-    instructions = mongo_conn['Instructions']
-
     # Initialise context variables
     recipe_count = None
     cuisine_count = None
@@ -278,7 +254,7 @@ def process_search (request):
         rows = cursor.fetchall()
         for row in rows:
             recipe_id = row[0]
-            instruction = instructions.find_one({'RecipeID': recipe_id})
+            instruction = instructions_collection.find_one({'RecipeID': recipe_id})
             image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
             recipe = {
                 'RecipeID': recipe_id,
@@ -290,8 +266,8 @@ def process_search (request):
             }
             recipes.append(recipe)
 
-    review_count = reviews.count_documents({})
-    review_score = reviews.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
+    review_count = reviews_collection.count_documents({})
+    review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
 
     # Prepare context
     json_response = {
@@ -312,9 +288,6 @@ def process_search (request):
     else:
         json_response['results']['current_page'] = (offset / 12) + 1
 
-    # Close connections
-    mongo_client.close()
-
     # Debugging
     print("POST Data:")
     print("Current offset:", offset)
@@ -328,5 +301,3 @@ def process_search (request):
     json_response = json.dumps(json_response)
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
-
-    
