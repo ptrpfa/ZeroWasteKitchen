@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
-from django.db import connection, connections
+from django.db import connection
 from django.shortcuts import render
 from core import settings
 from django.db import connections
@@ -60,7 +60,7 @@ def pages(request):
 @login_required(login_url="/login/")
 def get_recipes(request):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 10")
+        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RAND() LIMIT 10")
         rows = cursor.fetchall()
 
     # Connect to MongoDB
@@ -141,7 +141,7 @@ def view_recipe(request, id):
             'Carbohydrates': check_field(nutrition_data.get('Carbohydrates')),
             'Protein': check_field(nutrition_data.get('Protein')),
             'Reviews': reviews_data.get('Reviews', []) if reviews_data else [],
-            'Overall_Rating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else 'Not Available'
+            'Overall_Rating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else '- '
         }
     }
 
@@ -214,4 +214,12 @@ def search_recipes(request):
 @login_required(login_url="/login/")  
 def process_search (request):  # View for processing search
     return {"hello"}
-    
+
+def add_to_user_recipe(request, recipe_id):
+    if request.method == 'POST':
+        user_id = request.user.id
+        with connection.cursor() as cursor:
+            cursor.execute("INSERT INTO userrecipe (UserID, RecipeID) VALUES (%s, %s)", [user_id, recipe_id])
+        return redirect('recipe', recipe_id=recipe_id)
+    else:
+        return redirect('home')

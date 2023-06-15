@@ -9,5 +9,7 @@ urlpatterns = [
     path(r'recipe/', views.get_recipes, name='recipe'),                             # Temporary: view all recipes
     path(r'search/', views.search_recipes, name='search_recipes'),                  # Search page for recipes
     path(r'process_search/', views.process_search, name='search_recipes'),          # Server processing for recipe searches
+    path('recipe/<int:recipe_id>/add_to_user_recipe/', views.add_to_user_recipe, name='add_to_user_recipe'), #using this to insert into mapping table userrecipe
+    path('recipe/<int:recipe_id>/', views.get_recipes, name='recipe'),              #using this to insert into mapping table userrecipe
     re_path (r'^.*\.html', views.pages, name='pages')                               # Matches any html file
 ]
