@@ -9,7 +9,8 @@ from django.db import connection
 from django.shortcuts import render
 from core import settings
 from django.db import connections
-import re, html, json
+from .decorators import post_request_only
+import re, html, json, math
 
 def clean_input (input_value):
         
@@ -150,9 +151,17 @@ def view_recipe(request, id):
 
     return render(request, 'recipe/view_recipe.html', context)
 
-
 @login_required(login_url="/login/")
 def search_recipes(request):
+    """ 
+    Base SQL (view all recipes):
+    SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine 
+    FROM recipe 
+    ORDER BY RecipeID ASC
+    LIMIT 12
+    OFFSET xx
+    """
+
     # Get MongoDB connections
     mongo_client, mongo_conn = settings.get_mongodb()
     reviews = mongo_conn['Reviews']
@@ -171,7 +180,7 @@ def search_recipes(request):
         recipe_count = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
         cuisine_count = cursor.fetchone()[0]
-        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID LIMIT 12")
+        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET 0;")
         rows = cursor.fetchall()
 
     for row in rows:
@@ -200,6 +209,9 @@ def search_recipes(request):
                         'cuisine_count': cuisine_count,
                         'review_count': review_count,
                         'review_score': review_score,
+                        'page_count': math.ceil(recipe_count / 12),
+                        'pages': [ i for i in range(1, math.ceil(recipe_count / 12) + 1)],
+                        'current_page': 1
                     },
                 'recipes': recipes
             }
@@ -212,14 +224,78 @@ def search_recipes(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")  
-def process_search (request):  # View for processing search
-    return {"hello"}
+@post_request_only
+def process_search (request): 
+    # Get POST data
+    offset = (int(request.POST.get("current_page", "")) - 1) * 12 # SQL offset
 
-def add_to_user_recipe(request, recipe_id):
-    if request.method == 'POST':
-        user_id = request.user.id
-        with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO userrecipe (UserID, RecipeID) VALUES (%s, %s)", [user_id, recipe_id])
-        return redirect('recipe', recipe_id=recipe_id)
-    else:
-        return redirect('home')
+    """ 
+    Base SQL (view all recipes):
+    SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine 
+    FROM recipe 
+    ORDER BY RecipeID ASC
+    LIMIT 12
+    OFFSET xx
+    """
+
+    # Get MongoDB connections
+    mongo_client, mongo_conn = settings.get_mongodb()
+    reviews = mongo_conn['Reviews']
+    instructions = mongo_conn['Instructions']
+
+    # Initialise context variables
+    recipe_count = None
+    cuisine_count = None
+    review_count = None
+    review_score = None
+    recipes = []
+
+    # Get context values
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM recipe;")
+        recipe_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
+        cuisine_count = cursor.fetchone()[0]
+        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET %s;" % offset)
+        rows = cursor.fetchall()
+
+    for row in rows:
+        recipe_id = row[0]
+        instruction = instructions.find_one({'RecipeID': recipe_id})
+        image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
+        recipe = {
+            'RecipeID': recipe_id,
+            'Name': row[1],
+            'Description': row[2],
+            'MealType': row[3],
+            'Cuisine': row[4],
+            'Image': image_url,
+        }
+        recipes.append(recipe)
+
+    review_count = reviews.count_documents({})
+    review_score = reviews.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
+
+    # Prepare context
+    json_response = {
+                'segment': 'search_recipe',
+                'results': {
+                        'recipe_count': recipe_count,
+                        'cuisine_count': cuisine_count,
+                        'review_count': review_count,
+                        'review_score': review_score,
+                        'page_count': math.ceil(recipe_count / 12),
+                        'pages': [ i for i in range(1, math.ceil(recipe_count / 12) + 1)],
+                        'current_page': (offset / 12) + 1
+                    },
+                'recipes': recipes
+            }
+
+    # Close connections
+    mongo_client.close()
+
+    # Return response
+    json_response = json.dumps(json_response)
+    # Return response
+    return HttpResponse (json_response, content_type='application/json;charset=utf-8')
+

@@ -32,7 +32,7 @@
                   <div class="row">
                     <div class="col">
                       <p class="card-title text-muted mb-0">Recipes</p>
-                      <span class="h2 font-weight-bold mb-0">{{ results.recipe_count|default:0 }}</span>
+                      <span class="h2 font-weight-bold mb-0" id="recipe_count">{{ results.recipe_count|default:0 }}</span>
                     </div>
                     <div class="col-auto align-middle">
                       <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
@@ -50,7 +50,7 @@
                   <div class="row">
                     <div class="col">
                       <p class="card-title text-muted mb-0">Cuisines</p>
-                      <span class="h2 font-weight-bold mb-0">{{ results.cuisine_count|default:0 }}</span>
+                      <span class="h2 font-weight-bold mb-0" id="cuisine_count">{{ results.cuisine_count|default:0 }}</span>
                     </div>
                     <div class="col-auto align-middle">
                       <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
@@ -68,7 +68,7 @@
                   <div class="row">
                     <div class="col">
                       <p class="card-title text-muted mb-0">Reviews</p>
-                      <span class="h2 font-weight-bold mb-0">{{ results.review_count|default:0 }}</span>
+                      <span class="h2 font-weight-bold mb-0" id="review_count">{{ results.review_count|default:0 }}</span>
                     </div>
                     <div class="col-auto align-middle">
                       <div class="icon icon-shape bg-green text-white rounded-circle shadow">
@@ -86,7 +86,7 @@
                   <div class="row">
                     <div class="col">
                       <p class="card-title text-muted mb-0">Average Rating</p>
-                      <span class="h2 font-weight-bold mb-0">{{ results.review_score|default:0 }}</span>
+                      <span class="h2 font-weight-bold mb-0" id="review_score">{{ results.review_score|default:0 }}</span>
                     </div>
                     <div class="col-auto align-middle">
                       <div class="icon icon-shape bg-info text-white rounded-circle shadow">
@@ -109,7 +109,7 @@
           <div class="card shadow">
             <div class="card-body">
               <!-- Search Bar -->
-              <h4 class="mb-4">What ingredients do you have?</h4>
+              <h4 class="mb-4">What ingredients do you have? 🤔</h4>
               <div class="input-group input-group-alternative input-group-merge">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -118,7 +118,7 @@
               </div>
 
               <!-- Filters -->
-              <div class="input-group input-group-alternative input-group-merge mt-5" id="user_input">
+              <div class="input-group input-group-alternative input-group-merge mt-5" id="user_inputs">
                 You entered
                 ...
               </div>
@@ -130,9 +130,28 @@
 
     <!-- Results -->
     <div class="container-fluid">
-      <h4 class="mb-3">You can make {{results.recipe_count|default:0}} recipes!</h4>
-      {% for recipe in recipes %}
-        {% if forloop.counter0|divisibleby:4 %}
+      <h4 class="mb-2">You can make <span id="recipe_count_display">{{results.recipe_count|default:0}}</span> recipes!</h4>
+      <!-- Pagination -->
+      <div class="d-flex mb-3" id="pagination">
+        <h6 class="text-secondary font-italic me-auto align-middle">Viewing page <span id="current_page">{{ results.current_page }}</span> of <span id="page_count">{{ results.page_count }}</span></h6>
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-sm btn-success {% if results.current_page == 1 or results.page_count == 0%}disabled{% endif %}" id="btn_prev_page">Previous</button>
+          <button type="button" class="btn btn-sm btn-success {% if results.current_page == results.page_count or results.page_count == 0%}disabled{% endif %}" id="btn_next_page">Next</button>
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-success dropdown-toggle {% if results.page_count == 0%}disabled{% endif %}" data-bs-toggle="dropdown" id="btn_select_page">Select Page</button>
+            <ul class="dropdown-menu" style="max-height: 200px;overflow-y: auto;">
+              {% for i in results.pages %}
+              <li><a class="dropdown-item {% if results.current_page == i%}active{% endif %} " value="{{ i }}">{{ i }}</a></li>
+              {% endfor %}
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <!-- Recipes -->
+      <div id="recipes">
+        {% for recipe in recipes %}
+          {% if forloop.counter0|divisibleby:4 %}
           <div class="row row-cols-1 row-cols-md-4 g-4">
           {% endif %}
           
@@ -143,38 +162,18 @@
                       <h5 class="card-title text-center align-middle">{{ recipe.Name }}</h5>
                     </div>
                     <div class="card-body pt-2">
-                        <span class="badge bg-success mb-2">{{ recipe.Cuisine }}</span>
+                        <span style="background-color: #FF7766;" class="badge mb-2">{{ recipe.Cuisine }}</span>
                         <p>{{ recipe.Description|truncatechars:100 }}..</p>             
                     </div>
                     <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-block btn-primary b-0" style="transform: none;">View Recipe</a>
               </div>
           </div>
-        {% if forloop.counter|divisibleby:4 or forloop.last %}
-          </div>
-        {% endif %}
-      {% endfor %}
+          {% if forloop.counter|divisibleby:4 or forloop.last %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
     </div>
-
-    <!-- Pagination -->
-    <nav aria-label="Page navigation example">
-      <ul class="pagination">
-        <li class="page-item">
-          <a class="page-link" href="#" aria-label="Previous">
-            <span aria-hidden="true">&laquo;</span>
-            <span class="sr-only">Previous</span>
-          </a>
-        </li>
-        <li class="page-item"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item">
-          <a class="page-link" href="#" aria-label="Next">
-            <span aria-hidden="true">&raquo;</span>
-            <span class="sr-only">Next</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
     
     {% include "includes/footer.html" %}
 
@@ -183,6 +182,90 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+  $(document).ready(function() {
+
+    // Function to set loading screen
+    function set_loading_screen() {
+      // Get previous value
+      var old_recipes = $("#recipes").html();
+      // Set loading screen
+      $("#recipes").html("<div class='d-flex justify-content-center container-fluid mt-10'><div class='spinner-grow text-primary mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-success mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-danger mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-warning mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-info mr-4' role='status' style='width: 5rem; height: 5rem;'></div></div>");
+      // Return previous value
+      return old_recipes;
+    }
+
+    // Function to reset recipes
+    function reset_recipes(old_recipes) {
+      $("#recipes").html(old_recipes);
+    }
+
+    /* Search bar */
+    $('#search_bar').on('keyup', function (event) {
+        // Check if the enter key is pressed
+        if (event.keyCode === 13) {
+            // Show loading screen
+            var old_recipes = set_loading_screen();
+
+            // AJAX call to process search
+            $.ajax({ 
+                url: "{% url 'process_search' %}",
+                type: "POST",
+                data: {
+                        "csrfmiddlewaretoken": "{{ csrf_token }}",
+                        "search": this.value,
+                        "current_page": $('#current_page').text(),
+                    },
+                dataType: 'json',
+                success: function (data) {
+                  console.log(data);
+
+                  // Update results
+                  $('#recipe_count').text(data.results.recipe_count);
+                  $('#recipe_count_display').text(data.results.recipe_count);
+                  $('#cuisine_count').text(data.results.cuisine_count);
+                  $('#review_count').text(data.results.review_count);
+                  $('#page_count').text(data.results.page_count);
+                  $('#current_count').text(data.results.current_count);
+
+                  // Update recipes
+                  $('#recipes').html('');
+                  var recipes = "";
+                  var counter = 0;
+                  for(let i in data.recipes) {
+                    if(i % 4 == 0) {
+                      recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
+                      counter = 0;
+                    }
+                    recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
+                    recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
+                    recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
+                    recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
+                    counter += 1
+                    if(counter == 4){
+                      recipes += "</div>";
+                    }
+                  }
+                  $('#recipes').append(recipes);
+                  
+                  // Update pages
+
+
+                },
+                error: function() { 
+                  reset_recipes(old_recipes);
+                },
+                async: false 
+            });
+        }
+    } );
+
+
+    // Function for reset button
+
+    /* Table filters */
+  
+
+  });
+</script>
 {% endblock javascripts %}
-
-
