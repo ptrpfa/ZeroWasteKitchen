@@ -51,13 +51,21 @@
     .row {
         margin-bottom: 20px;
     }
+    .custom-gradient {
+        background: linear-gradient(135deg, #FF7F50 0%, #FF4E50 100%);
+      }
+      .card-img-top {
+            object-fit: cover;
+            height: 200px;
+            width: 100%;
+        }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
 
 <!-- Header -->
-<div class="header bg-gradient-primary pb-8 pt-5">
+<div class="header custom-gradient pb-8 pt-5">
     <div class="container-fluid">
         <div class="header-body">
             <!-- Card stats -->
@@ -152,12 +160,12 @@
                 <div class="card-body">
                     <h5 class="card-title dish-name">{{ recipe.Name }}</h5>
                     <div class="tags">
-                        <span class="badge bg-secondary">Cuisine: {{ recipe.Cuisine }}</span>
-                        <span class="badge bg-secondary">Meal Type: {{ recipe.MealType }}</span>
+                        <span class="badge bg-success mb-2">{{ recipe.Cuisine }}</span>
+                        <span class="badge bg-secondary">{{ recipe.MealType }}</span>
                     </div>
                     <p class="card-text description"><strong>Description:</strong><br>{{ recipe.Description }}</p>
                     <div class="mt-auto text-end">
-                        <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary">View This Recipe!</a>
+                        <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary">View Recipe</a>
                     </div>
                 </div>
             </div>
