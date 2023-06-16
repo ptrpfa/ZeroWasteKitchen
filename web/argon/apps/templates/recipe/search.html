@@ -391,8 +391,36 @@
     });
   }
 
+  // Function to suggested ingredients
+  function get_suggested_ingredients() {
+    // AJAX call to process browse request
+    $.ajax({ 
+        url: "{% url 'get_suggested_ingredients' %}",
+        type: "POST",
+        data: {
+                "csrfmiddlewaretoken": "{{ csrf_token }}",
+            },
+        dataType: 'json',
+        success: function (data) {
+          for(let i in data.suggested_ingredients) {
+            // Add to list of ingredients
+            var new_ingredient = "<button class='btn btn-sm btn-outline-danger alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='add_suggested_ingredient(this)''>" + data.suggested_ingredients[i] + "  <i class='fas fa-plus'></i></button>";
+            $('#suggested_ingredients').append(new_ingredient);
+          }
+        },
+        error: function() { 
+          console.log("Error getting suggested ingredients!");
+        },
+        // async: false 
+    });
+  }
+
   // Function to add suggested ingredient
   function add_suggested_ingredient(button) {
+    // Check if there are still any suggested ingredients left
+    if($('#suggested_ingredients').children('button').length - 1 == 0) {
+      get_suggested_ingredients();
+    }
     // Add to list of ingredients
     var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + button.textContent + "  <i class='fas fa-times'></i></button>";
     $('#user_inputs').append(new_ingredient);

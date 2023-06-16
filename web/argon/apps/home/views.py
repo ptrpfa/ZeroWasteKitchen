@@ -218,6 +218,29 @@ def search_recipes(request):
     html_template = loader.get_template('recipe/search.html')
     return HttpResponse(html_template.render(context, request))
 
+@login_required(login_url="/login/")
+@post_request_only
+def get_suggested_ingredients(request):
+    # Initialise context variables
+    suggested_ingredients = []
+
+    # Get context values
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT name FROM ingredient ORDER BY RAND() LIMIT 20;")
+        rows = cursor.fetchall()
+        for row in rows:
+            suggested_ingredients.append(row[0])
+
+    # Prepare context
+    json_response = {
+                'suggested_ingredients': suggested_ingredients
+            }
+
+    # Return response
+    json_response = json.dumps(json_response)
+    # Return response
+    return HttpResponse (json_response, content_type='application/json;charset=utf-8')
+
 @login_required(login_url="/login/")  
 @post_request_only
 def process_search (request): 
