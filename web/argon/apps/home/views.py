@@ -246,13 +246,21 @@ def get_suggested_ingredients(request):
 def process_search (request): 
     """ 
     Base SQL (view all recipes):
-    SELECT RecipeID, Name, Description, MealType, Cuisine 
-    FROM recipe 
-    ORDER BY RecipeID ASC
+    SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine
+    FROM recipe r1
+    WHERE r1.RecipeID IN (
+        SELECT DISTINCT r2.RecipeID
+        FROM recipe r2
+        JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID
+        JOIN ingredient i ON i.IngredientID = ri.IngredientID
+        WHERE i.Name LIKE '%fish%' OR i.Name LIKE '%chicken%'
+    )
+    ORDER BY r1.RecipeID ASC
     LIMIT 12
-    OFFSET xx
+    OFFSET 0;
 
 
+    Advanced search:
     SELECT DISTINCT(RecipeIngredient.RecipeID)
     FROM RecipeIngredient
     WHERE RecipeIngredient.IngredientID IN (SELECT Ingredient.IngredientID
@@ -282,15 +290,29 @@ def process_search (request):
     recipes = []
     
     # Prepare base query
-    base_query = "SELECT RecipeID, Name, Description, MealType, Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET %s;"
+    base_query = "SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine FROM recipe r1 "  
+
+    # Check search terms
+    if(list_search_terms):
+        # Parse search items
+        list_search_terms = ["i.Name LIKE '%%%s%%'" % i for i in list_search_terms]
+        search = ' OR '.join(list_search_terms)
+        search_string = "WHERE r1.RecipeID IN (SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE %s) " % search
+        base_query += search_string
+        base_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET "
+    else:
+        # No search items
+        base_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET "
 
     # Check request type
     if(request_type == 'browse'):
-        base_query = base_query % new_offset
+        base_query += "%s;" % new_offset
         new_page = next_page
     elif(request_type == 'search'):
-        base_query = base_query % offset
+        base_query += "%s;" % offset
         new_page = current_page
+
+    # TO UPDATE COUNTS
 
     # Get context values
     with connection.cursor() as cursor:
