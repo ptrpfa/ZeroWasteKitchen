@@ -102,8 +102,9 @@
       </div>
     </div>
 
-    <!-- Search -->
+    <!-- Search and Filters -->
     <div class="container-fluid mt--7">
+      <!-- Search -->
       <div class="row">
         <div class="col">
           <div class="card shadow">
@@ -117,10 +118,25 @@
                 <input class="form-control" placeholder="Enter each ingredient you have here.." type="text" id="search_bar" style="padding-left: 1.5em">
               </div>
 
-              <!-- Filters -->
-              <div class="input-group input-group-alternative input-group-merge mt-5" id="user_inputs">
-                You entered
-                ...
+              <!-- User Inputs -->
+              <div class="input-group mt-4" id="user_inputs">
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Filters -->
+      <div class="row">
+        <div class="col">
+          <div class="card shadow">
+            <div class="card-body">
+              <h4 class="mb-3">Do you have... </h4>
+              <div class="input-group" id="suggested_ingredients">
+                {% for ingredient in suggested_ingredients %}
+                  <button class="btn btn-sm btn-outline-danger alert rounded-pill fade show px-2 py-1 mx-1" type="button" data-dismiss="alert" onclick="add_suggested_ingredient(this)">{{ ingredient }}  <i class="fas fa-plus"></i></button>
+                {% endfor %}
               </div>
             </div>
           </div>
@@ -182,328 +198,245 @@
 {% block javascripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script>
+  // Function to set loading screen
+  function set_loading_screen() {
+    // Get previous value
+    var old_recipes = $("#recipes").html();
+    // Set loading screen
+    $("#recipes").html("<div class='d-flex justify-content-center container-fluid mt-10'><div class='spinner-grow text-primary mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-success mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-danger mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-warning mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-info mr-4' role='status' style='width: 5rem; height: 5rem;'></div></div>");
+    // Return previous value
+    return old_recipes;
+  }
+
+  // Function to reset recipes
+  function reset_recipes(old_recipes) {
+    $("#recipes").html(old_recipes);
+  }
+
+  // Function to perform simple string cleaning
+  function clean_string(string) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        "/": '&#x2F;',
+    };
+    const reg = /[&<>"'/]/ig;
+    return string.replace(reg, (match)=>(map[match]));
+  }
+
+  // Function to send a search request
+  function get_search(search_term=null) {
+    // Prepare search terms
+    var list_search_terms = []; 
+    $('#user_inputs').children('button').each(function() {
+      list_search_terms.push($(this).text().trim());
+    });
+    // Check if a search term is received
+    if(search_term) {
+      // Add to list of search terms
+      list_search_terms.push(search_term);
+      // Add to list of ingredients
+      var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + clean_string(search_term) + "  <i class='fas fa-times'></i></button>";
+      $('#user_inputs').append(new_ingredient);
+      // Clear search bar
+      $('#search_bar').val('');
+    }
+
+    // Show loading screen
+    var old_recipes = set_loading_screen();
+    // AJAX call to process search request
+    $.ajax({ 
+        url: "{% url 'process_search' %}",
+        type: "POST",
+        data: {
+                "csrfmiddlewaretoken": "{{ csrf_token }}",
+                "type": "search",
+                "search": JSON.stringify(list_search_terms),
+                "current_page": $('#current_page').text()
+            },
+        dataType: 'json',
+        success: function (data) {
+          console.log("Search!");
+          console.log(data);
+          // Update results
+          $('#recipe_count').text(data.results.recipe_count);
+          $('#recipe_count_display').text(data.results.recipe_count);
+          $('#cuisine_count').text(data.results.cuisine_count);
+          $('#review_count').text(data.results.review_count);
+          $('#page_count').text(data.results.page_count);
+          $('#current_page').text(data.results.current_page);
+
+          // Update pagination
+          $('#page_selection').html('');
+          var pages = "";
+          for(var i = 0; i < data.results.page_count; i++) {
+            var current_page = i + 1;
+            pages += "<li><a class='dropdown-item" ;
+            pages += (current_page == data.results.current_page) ? " active' value='" : "' value='";
+            pages += current_page + "'>" + current_page + "</a></li>"
+          }
+          $('#page_selection').append(pages);
+          var next_page_classes = $('#btn_next_page').attr('class').replace('disabled', '');
+          var prev_page_classes = $('#btn_prev_page').attr('class').replace('disabled', '');
+          var page_selection = $('#btn_select_page').attr('class').replace('disabled', '');
+          prev_page_classes += (data.results.current_page == 1 || data.results.page_count == 0) ? "disabled" : "";
+          next_page_classes += (data.results.current_page == data.results.page_count || data.results.page_count == 0) ? " disabled" : "";
+          page_selection += (data.results.page_count == 0) ? "disabled" : "";
+          $('#btn_next_page').attr('class', next_page_classes);
+          $('#btn_prev_page').attr('class', prev_page_classes);
+          $('#btn_select_page').attr('class', page_selection);
+
+          // Update recipes
+          $('#recipes').html('');
+          var recipes = "";
+          var counter = 0;
+          for(let i in data.recipes) {
+            if(i % 4 == 0) {
+              recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
+              counter = 0;
+            }
+            recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
+            recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
+            recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
+            recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
+            counter += 1
+            if(counter == 4){
+              recipes += "</div>";
+            }
+          }
+          $('#recipes').append(recipes);
+
+        },
+        error: function() { 
+          reset_recipes(old_recipes);
+        },
+        // async: false 
+    });
+  }
+
+  // Funciton to send a browse request
+  function get_browse(next_page) {
+    // Show loading screen
+    var old_recipes = set_loading_screen();
+    // AJAX call to process browse request
+    $.ajax({ 
+        url: "{% url 'process_search' %}",
+        type: "POST",
+        data: {
+                "csrfmiddlewaretoken": "{{ csrf_token }}",
+                "type": "browse",
+                "current_page": $('#current_page').text(),
+                "next_page": next_page,
+            },
+        dataType: 'json',
+        success: function (data) {
+          console.log("Browse!");
+          console.log(data);
+          // Update results
+          $('#recipe_count').text(data.results.recipe_count);
+          $('#recipe_count_display').text(data.results.recipe_count);
+          $('#cuisine_count').text(data.results.cuisine_count);
+          $('#review_count').text(data.results.review_count);
+          $('#page_count').text(data.results.page_count);
+          $('#current_page').text(data.results.current_page);
+
+          // Update pagination
+          $('#page_selection').html('');
+          var pages = "";
+          for(var i = 0; i < data.results.page_count; i++) {
+            var current_page = i + 1;
+            pages += "<li><a class='dropdown-item" ;
+            pages += (current_page == data.results.current_page) ? " active' value='" : "' value='";
+            pages += current_page + "'>" + current_page + "</a></li>"
+          }
+          $('#page_selection').append(pages);
+          var next_page_classes = $('#btn_next_page').attr('class').replace('disabled', '');
+          var prev_page_classes = $('#btn_prev_page').attr('class').replace('disabled', '');
+          var page_selection = $('#btn_select_page').attr('class').replace('disabled', '');
+          prev_page_classes += (data.results.current_page == 1 || data.results.page_count == 0) ? "disabled" : "";
+          next_page_classes += (data.results.current_page == data.results.page_count || data.results.page_count == 0) ? " disabled" : "";
+          page_selection += (data.results.page_count == 0) ? "disabled" : "";
+          $('#btn_next_page').attr('class', next_page_classes);
+          $('#btn_prev_page').attr('class', prev_page_classes);
+          $('#btn_select_page').attr('class', page_selection);
+
+          // Update recipes
+          $('#recipes').html('');
+          var recipes = "";
+          var counter = 0;
+          for(let i in data.recipes) {
+            if(i % 4 == 0) {
+              recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
+              counter = 0;
+            }
+            recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
+            recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
+            recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
+            recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
+            counter += 1
+            if(counter == 4){
+              recipes += "</div>";
+            }
+          }
+          $('#recipes').append(recipes);
+
+        },
+        error: function() { 
+          reset_recipes(old_recipes);
+        },
+        // async: false 
+    });
+  }
+
+  // Function to add suggested ingredient
+  function add_suggested_ingredient(button) {
+    // Add to list of ingredients
+    var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + button.textContent + "  <i class='fas fa-times'></i></button>";
+    $('#user_inputs').append(new_ingredient);
+    // Trigger search event
+    get_search();
+  }
+
+  // Function to remove an ingredient from the list of search terms
+  function remove_ingredient(button) {
+    $("#user_inputs").find("button").each(function() {
+      if ($(this).text() === button.textContent) {
+        $(this).remove();
+        // Trigger search event
+        get_search();
+      }
+    });
+  }
+
+  // Function for reset button
+
+  /* Table filters */
+
+  // Preload functions
   $(document).ready(function() {
-
-    // Function to set loading screen
-    function set_loading_screen() {
-      // Get previous value
-      var old_recipes = $("#recipes").html();
-      // Set loading screen
-      $("#recipes").html("<div class='d-flex justify-content-center container-fluid mt-10'><div class='spinner-grow text-primary mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-success mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-danger mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-warning mr-4' role='status' style='width: 5rem; height: 5rem;'></div><div class='spinner-grow text-info mr-4' role='status' style='width: 5rem; height: 5rem;'></div></div>");
-      // Return previous value
-      return old_recipes;
-    }
-
-    // Function to reset recipes
-    function reset_recipes(old_recipes) {
-      $("#recipes").html(old_recipes);
-    }
-
     /* Search bar */
     $('#search_bar').on('keyup', function (event) {
         // Check if the enter key is pressed
         if (event.keyCode === 13) {
-            // Show loading screen
-            var old_recipes = set_loading_screen();
-
-            // AJAX call to process search
-            $.ajax({ 
-                url: "{% url 'process_search' %}",
-                type: "POST",
-                data: {
-                        "csrfmiddlewaretoken": "{{ csrf_token }}",
-                        "search": this.value,
-                        "current_page": $('#current_page').text()
-                    },
-                dataType: 'json',
-                success: function (data) {
-                  console.log("Search!");
-                  console.log(data);
-                  // Update results
-                  $('#recipe_count').text(data.results.recipe_count);
-                  $('#recipe_count_display').text(data.results.recipe_count);
-                  $('#cuisine_count').text(data.results.cuisine_count);
-                  $('#review_count').text(data.results.review_count);
-                  $('#page_count').text(data.results.page_count);
-                  $('#current_page').text(data.results.current_page);
-
-                  // Update pagination
-                  $('#page_selection').html('');
-                  var pages = "";
-                  for(var i = 0; i < data.results.page_count; i++) {
-                    var current_page = i + 1;
-                    pages += "<li><a class='dropdown-item" ;
-                    pages += (current_page == data.results.current_page) ? " active' value='" : "' value='";
-                    pages += current_page + "'>" + current_page + "</a></li>"
-                  }
-                  $('#page_selection').append(pages);
-                  var next_page_classes = $('#btn_next_page').attr('class').replace('disabled', '');
-                  var prev_page_classes = $('#btn_prev_page').attr('class').replace('disabled', '');
-                  var page_selection = $('#btn_select_page').attr('class').replace('disabled', '');
-                  prev_page_classes += (data.results.current_page == 1 || data.results.page_count == 0) ? "disabled" : "";
-                  next_page_classes += (data.results.current_page == data.results.page_count || data.results.page_count == 0) ? " disabled" : "";
-                  page_selection += (data.results.page_count == 0) ? "disabled" : "";
-                  $('#btn_next_page').attr('class', next_page_classes);
-                  $('#btn_prev_page').attr('class', prev_page_classes);
-                  $('#btn_select_page').attr('class', page_selection);
-
-                  // Update recipes
-                  $('#recipes').html('');
-                  var recipes = "";
-                  var counter = 0;
-                  for(let i in data.recipes) {
-                    if(i % 4 == 0) {
-                      recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
-                      counter = 0;
-                    }
-                    recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
-                    recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
-                    recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
-                    recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
-                    counter += 1
-                    if(counter == 4){
-                      recipes += "</div>";
-                    }
-                  }
-                  $('#recipes').append(recipes);
-
-                },
-                error: function() { 
-                  reset_recipes(old_recipes);
-                },
-                // async: false 
-            });
+          get_search(this.value);
         }
     } );
 
     /* Pagination buttons */
     $('#btn_prev_page').on('click', function(event) {
-        // Show loading screen
-        var old_recipes = set_loading_screen();
-
-        // AJAX call to process search
-        $.ajax({ 
-            url: "{% url 'process_search' %}",
-            type: "POST",
-            data: {
-                    "csrfmiddlewaretoken": "{{ csrf_token }}",
-                    "current_page": $('#current_page').text(),
-                    "next_page": parseInt($('#current_page').text()) - 1,
-                },
-            dataType: 'json',
-            success: function (data) {
-              console.log("Previous page!");
-              console.log(data);
-              // Update results
-              $('#recipe_count').text(data.results.recipe_count);
-              $('#recipe_count_display').text(data.results.recipe_count);
-              $('#cuisine_count').text(data.results.cuisine_count);
-              $('#review_count').text(data.results.review_count);
-              $('#page_count').text(data.results.page_count);
-              $('#current_page').text(data.results.current_page);
-
-              // Update pagination
-              $('#page_selection').html('');
-              var pages = "";
-              for(var i = 0; i < data.results.page_count; i++) {
-                var current_page = i + 1;
-                pages += "<li><a class='dropdown-item" ;
-                pages += (current_page == data.results.current_page) ? " active' value='" : "' value='";
-                pages += current_page + "'>" + current_page + "</a></li>"
-              }
-              $('#page_selection').append(pages);
-              var next_page_classes = $('#btn_next_page').attr('class').replace('disabled', '');
-              var prev_page_classes = $('#btn_prev_page').attr('class').replace('disabled', '');
-              var page_selection = $('#btn_select_page').attr('class').replace('disabled', '');
-              prev_page_classes += (data.results.current_page == 1 || data.results.page_count == 0) ? "disabled" : "";
-              next_page_classes += (data.results.current_page == data.results.page_count || data.results.page_count == 0) ? " disabled" : "";
-              page_selection += (data.results.page_count == 0) ? "disabled" : "";
-              $('#btn_next_page').attr('class', next_page_classes);
-              $('#btn_prev_page').attr('class', prev_page_classes);
-              $('#btn_select_page').attr('class', page_selection);
-
-              // Update recipes
-              $('#recipes').html('');
-              var recipes = "";
-              var counter = 0;
-              for(let i in data.recipes) {
-                if(i % 4 == 0) {
-                  recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
-                  counter = 0;
-                }
-                recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
-                recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
-                recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
-                recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
-                counter += 1
-                if(counter == 4){
-                  recipes += "</div>";
-                }
-              }
-              $('#recipes').append(recipes);
-
-            },
-            error: function() { 
-              reset_recipes(old_recipes);
-            },
-            // async: false 
-        });
-      
+        get_browse(parseInt($('#current_page').text()) - 1);
     } );
-
     $('#btn_next_page').on('click', function(event) {
-      // Show loading screen
-      var old_recipes = set_loading_screen();
-
-      // AJAX call to process search
-      $.ajax({ 
-          url: "{% url 'process_search' %}",
-          type: "POST",
-          data: {
-                  "csrfmiddlewaretoken": "{{ csrf_token }}",
-                  "current_page": $('#current_page').text(),
-                  "next_page": parseInt($('#current_page').text()) + 1,
-              },
-          dataType: 'json',
-          success: function (data) {
-            console.log("Next page!");
-            console.log(data);
-            // Update results
-            $('#recipe_count').text(data.results.recipe_count);
-            $('#recipe_count_display').text(data.results.recipe_count);
-            $('#cuisine_count').text(data.results.cuisine_count);
-            $('#review_count').text(data.results.review_count);
-            $('#page_count').text(data.results.page_count);
-            $('#current_page').text(data.results.current_page);
-
-            // Update pagination
-            $('#page_selection').html('');
-            var pages = "";
-            for(var i = 0; i < data.results.page_count; i++) {
-              var current_page = i + 1;
-              pages += "<li><a class='dropdown-item" ;
-              pages += (current_page == data.results.current_page) ? " active' value='" : "' value='";
-              pages += current_page + "'>" + current_page + "</a></li>"
-            }
-            $('#page_selection').append(pages);
-            var next_page_classes = $('#btn_next_page').attr('class').replace('disabled', '');
-            var prev_page_classes = $('#btn_prev_page').attr('class').replace('disabled', '');
-            var page_selection = $('#btn_select_page').attr('class').replace('disabled', '');
-            prev_page_classes += (data.results.current_page == 1 || data.results.page_count == 0) ? "disabled" : "";
-            next_page_classes += (data.results.current_page == data.results.page_count || data.results.page_count == 0) ? " disabled" : "";
-            page_selection += (data.results.page_count == 0) ? "disabled" : "";
-            $('#btn_next_page').attr('class', next_page_classes);
-            $('#btn_prev_page').attr('class', prev_page_classes);
-            $('#btn_select_page').attr('class', page_selection);
-
-            // Update recipes
-            $('#recipes').html('');
-            var recipes = "";
-            var counter = 0;
-            for(let i in data.recipes) {
-              if(i % 4 == 0) {
-                recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
-                counter = 0;
-              }
-              recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
-              recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
-              recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
-              recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
-              counter += 1
-              if(counter == 4){
-                recipes += "</div>";
-              }
-            }
-            $('#recipes').append(recipes);
-
-          },
-          error: function() { 
-            reset_recipes(old_recipes);
-          },
-          // async: false 
-      });
-
+      get_browse(parseInt($('#current_page').text()) + 1);
     } );
-
     $('#page_selection').on('click', '.dropdown-item', function(event) {
-      // Show loading screen
-      var old_recipes = set_loading_screen();
-
-      // AJAX call to process search
-      $.ajax({ 
-          url: "{% url 'process_search' %}",
-          type: "POST",
-          data: {
-                  "csrfmiddlewaretoken": "{{ csrf_token }}",
-                  "current_page": $('#current_page').text(),
-                  "next_page": parseInt($(this).text()),
-              },
-          dataType: 'json',
-          success: function (data) {
-            console.log("Select page!");
-            console.log(data);
-            // Update results
-            $('#recipe_count').text(data.results.recipe_count);
-            $('#recipe_count_display').text(data.results.recipe_count);
-            $('#cuisine_count').text(data.results.cuisine_count);
-            $('#review_count').text(data.results.review_count);
-            $('#page_count').text(data.results.page_count);
-            $('#current_page').text(data.results.current_page);
-
-            // Update pagination
-            $('#page_selection').html('');
-            var pages = "";
-            for(var i = 0; i < data.results.page_count; i++) {
-              var current_page = i + 1;
-              pages += "<li><a class='dropdown-item" ;
-              pages += (current_page == data.results.current_page) ? " active' value='" : "' value='";
-              pages += current_page + "'>" + current_page + "</a></li>"
-            }
-            $('#page_selection').append(pages);
-            var next_page_classes = $('#btn_next_page').attr('class').replace('disabled', '');
-            var prev_page_classes = $('#btn_prev_page').attr('class').replace('disabled', '');
-            var page_selection = $('#btn_select_page').attr('class').replace('disabled', '');
-            prev_page_classes += (data.results.current_page == 1 || data.results.page_count == 0) ? "disabled" : "";
-            next_page_classes += (data.results.current_page == data.results.page_count || data.results.page_count == 0) ? " disabled" : "";
-            page_selection += (data.results.page_count == 0) ? "disabled" : "";
-            $('#btn_next_page').attr('class', next_page_classes);
-            $('#btn_prev_page').attr('class', prev_page_classes);
-            $('#btn_select_page').attr('class', page_selection);
-
-            // Update recipes
-            $('#recipes').html('');
-            var recipes = "";
-            var counter = 0;
-            for(let i in data.recipes) {
-              if(i % 4 == 0) {
-                recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
-                counter = 0;
-              }
-              recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
-              recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
-              recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
-              recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
-              counter += 1
-              if(counter == 4){
-                recipes += "</div>";
-              }
-            }
-            $('#recipes').append(recipes);
-
-          },
-          error: function() { 
-            reset_recipes(old_recipes);
-          },
-          // async: false 
-      });
-    
-    } );
-
-    // Function for reset button
-
-    /* Table filters */
-  
+      get_browse(parseInt($(this).text()));
+    } );  
 
   });
+
 </script>
 {% endblock javascripts %}

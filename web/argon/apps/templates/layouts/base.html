@@ -20,6 +20,13 @@
   <!-- Argon CSS -->
   <link rel="stylesheet" href="/static/assets/css/argon.css?v=1.2.0" type="text/css">
 
+  {% include "includes/scripts.html" %}
+  <script src="/static/assets/js/argon.js?v=1.2.0"></script>
+
+  <!-- Specific JS goes HERE --> 
+  {% block javascripts %}{% endblock javascripts %}
+  
+
   <!-- Specific CSS goes HERE -->
   {% block stylesheets %}{% endblock stylesheets %}
 
@@ -35,12 +42,7 @@
 
   </div>
 
-  {% include "includes/scripts.html" %}
-
-  <!-- Specific JS goes HERE --> 
-  {% block javascripts %}{% endblock javascripts %}
-
-  <script src="/static/assets/js/argon.js?v=1.2.0"></script>
+  
 
 </body>
 
