@@ -228,7 +228,7 @@
   }
 
   // Function to send a search request
-  function get_search(search_term=null) {
+  function get_search(request_type, search_term=null, next_page=1) {
     // Prepare search terms
     var list_search_terms = []; 
     $('#user_inputs').children('button').each(function() {
@@ -236,110 +236,44 @@
     });
     // Check if a search term is received
     if(search_term) {
-      // Add to list of search terms
-      list_search_terms.push(search_term);
-      // Add to list of ingredients
-      var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + clean_string(search_term) + "  <i class='fas fa-times'></i></button>";
-      $('#user_inputs').append(new_ingredient);
+      // Check if ingredient is already in list of searches
+      if(!list_search_terms.includes(search_term)) {
+        // Add to list of search terms
+        list_search_terms.push(search_term);
+        // Add to list of ingredients
+        var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + clean_string(search_term) + "  <i class='fas fa-times'></i></button>";
+        $('#user_inputs').append(new_ingredient);
+      }
+
       // Clear search bar
       $('#search_bar').val('');
     }
 
     // Show loading screen
     var old_recipes = set_loading_screen();
+
     // AJAX call to process search request
     $.ajax({ 
         url: "{% url 'process_search' %}",
         type: "POST",
         data: {
                 "csrfmiddlewaretoken": "{{ csrf_token }}",
-                "type": "search",
+                "type": request_type,
                 "search": JSON.stringify(list_search_terms),
-                "current_page": $('#current_page').text()
+                "page": next_page 
             },
         dataType: 'json',
         success: function (data) {
-          console.log("Search!");
+          // For debugging
+          console.log("Request type: " + request_type);
           console.log(data);
+
           // Update results
           $('#recipe_count').text(data.results.recipe_count);
           $('#recipe_count_display').text(data.results.recipe_count);
           $('#cuisine_count').text(data.results.cuisine_count);
           $('#review_count').text(data.results.review_count);
-          $('#page_count').text(data.results.page_count);
-          $('#current_page').text(data.results.current_page);
-
-          // Update pagination
-          $('#page_selection').html('');
-          var pages = "";
-          for(var i = 0; i < data.results.page_count; i++) {
-            var current_page = i + 1;
-            pages += "<li><a class='dropdown-item" ;
-            pages += (current_page == data.results.current_page) ? " active' value='" : "' value='";
-            pages += current_page + "'>" + current_page + "</a></li>"
-          }
-          $('#page_selection').append(pages);
-          var next_page_classes = $('#btn_next_page').attr('class').replace('disabled', '');
-          var prev_page_classes = $('#btn_prev_page').attr('class').replace('disabled', '');
-          var page_selection = $('#btn_select_page').attr('class').replace('disabled', '');
-          prev_page_classes += (data.results.current_page == 1 || data.results.page_count == 0) ? "disabled" : "";
-          next_page_classes += (data.results.current_page == data.results.page_count || data.results.page_count == 0) ? " disabled" : "";
-          page_selection += (data.results.page_count == 0) ? "disabled" : "";
-          $('#btn_next_page').attr('class', next_page_classes);
-          $('#btn_prev_page').attr('class', prev_page_classes);
-          $('#btn_select_page').attr('class', page_selection);
-
-          // Update recipes
-          $('#recipes').html('');
-          var recipes = "";
-          var counter = 0;
-          for(let i in data.recipes) {
-            if(i % 4 == 0) {
-              recipes += "<div class='row row-cols-1 row-cols-md-4 g-4'>";
-              counter = 0;
-            }
-            recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
-            recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
-            recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
-            recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
-            counter += 1
-            if(counter == 4){
-              recipes += "</div>";
-            }
-          }
-          $('#recipes').append(recipes);
-
-        },
-        error: function() { 
-          reset_recipes(old_recipes);
-        },
-        // async: false 
-    });
-  }
-
-  // Funciton to send a browse request
-  function get_browse(next_page) {
-    // Show loading screen
-    var old_recipes = set_loading_screen();
-    // AJAX call to process browse request
-    $.ajax({ 
-        url: "{% url 'process_search' %}",
-        type: "POST",
-        data: {
-                "csrfmiddlewaretoken": "{{ csrf_token }}",
-                "type": "browse",
-                "current_page": $('#current_page').text(),
-                "next_page": next_page,
-            },
-        dataType: 'json',
-        success: function (data) {
-          console.log("Browse!");
-          console.log(data);
-          // Update results
-          $('#recipe_count').text(data.results.recipe_count);
-          $('#recipe_count_display').text(data.results.recipe_count);
-          $('#cuisine_count').text(data.results.cuisine_count);
-          $('#review_count').text(data.results.review_count);
+          $('#review_score').text(data.results.review_score);
           $('#page_count').text(data.results.page_count);
           $('#current_page').text(data.results.current_page);
 
@@ -411,7 +345,7 @@
         error: function() { 
           console.log("Error getting suggested ingredients!");
         },
-        // async: false 
+        async: false 
     });
   }
 
@@ -421,11 +355,20 @@
     if($('#suggested_ingredients').children('button').length - 1 == 0) {
       get_suggested_ingredients();
     }
-    // Add to list of ingredients
-    var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + button.textContent + "  <i class='fas fa-times'></i></button>";
-    $('#user_inputs').append(new_ingredient);
-    // Trigger search event
-    get_search();
+    // Check if ingredient is already in list of searches
+    var present = false;
+    $("#user_inputs").find("button").each(function() {
+      if ($(this).text() === button.textContent) {
+        present = true;
+      }
+    });
+    if(!present) {
+      // Add to list of ingredients
+      var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + button.textContent + "  <i class='fas fa-times'></i></button>";
+      $('#user_inputs').append(new_ingredient);
+      // Trigger search event
+      get_search('search');
+    }
   }
 
   // Function to remove an ingredient from the list of search terms
@@ -434,7 +377,7 @@
       if ($(this).text() === button.textContent) {
         $(this).remove();
         // Trigger search event
-        get_search();
+        get_search('search');
       }
     });
   }
@@ -449,19 +392,19 @@
     $('#search_bar').on('keyup', function (event) {
         // Check if the enter key is pressed
         if (event.keyCode === 13) {
-          get_search(this.value);
+          get_search('search', this.value);
         }
     } );
 
     /* Pagination buttons */
     $('#btn_prev_page').on('click', function(event) {
-        get_browse(parseInt($('#current_page').text()) - 1);
+        get_search('browse', null, parseInt($('#current_page').text()) - 1);
     } );
     $('#btn_next_page').on('click', function(event) {
-      get_browse(parseInt($('#current_page').text()) + 1);
+      get_search('browse', null, parseInt($('#current_page').text()) + 1);
     } );
     $('#page_selection').on('click', '.dropdown-item', function(event) {
-      get_browse(parseInt($(this).text()));
+      get_search('browse', null, parseInt($(this).text()));
     } );  
 
   });

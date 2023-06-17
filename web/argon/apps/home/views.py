@@ -275,52 +275,45 @@ def process_search (request):
     
     # Get POST data
     request_type = request.POST.get("type", "")                         # Request type
-    current_page = int(request.POST.get("current_page", 0))             # Current page number
-    next_page = int(request.POST.get("next_page", 0))                   # Page number of next page to be browsed
-    offset = (current_page - 1) * 12                                    # Current row offset
-    new_offset = (next_page - 1) * 12                                   # New row offset
     list_search_terms = json.loads(request.POST.get("search", "[]"))    # Search terms
+    requested_page = int(request.POST.get("page", 0))                   # Requested page number
+    offset = (requested_page - 1) * 12                                  # Requested row offset
 
     # Initialise context variables
     recipe_count = None
     cuisine_count = None
     review_count = None
     review_score = None
-    new_page = None
     recipes = []
     
-    # Prepare base query
-    base_query = "SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine FROM recipe r1 "  
+    # Prepare queries
+    search_query = "SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine FROM recipe r1 "  
+    base_query = "SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE "
 
     # Check search terms
     if(list_search_terms):
         # Parse search items
         list_search_terms = ["i.Name LIKE '%%%s%%'" % i for i in list_search_terms]
         search = ' OR '.join(list_search_terms)
-        search_string = "WHERE r1.RecipeID IN (SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE %s) " % search
-        base_query += search_string
-        base_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET "
+        base_query += search
+        search_query += "WHERE r1.RecipeID IN (%s) " % base_query
+        count_query = "SELECT COUNT(DISTINCT(temp.RecipeID)), COUNT(DISTINCT(temp.Cuisine)) FROM (" + search_query + ") temp;"
+        search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
     else:
         # No search items
-        base_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET "
-
-    # Check request type
-    if(request_type == 'browse'):
-        base_query += "%s;" % new_offset
-        new_page = next_page
-    elif(request_type == 'search'):
-        base_query += "%s;" % offset
-        new_page = current_page
-
-    # TO UPDATE COUNTS
+        count_query = "SELECT COUNT(*), COUNT(DISTINCT(Cuisine)) FROM recipe;"
+        search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
 
     # Get context values
     with connection.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM recipe;")
-        recipe_count = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
-        cuisine_count = cursor.fetchone()[0]
-        cursor.execute(base_query)
+        # Get recipe and cuisine count
+        cursor.execute(count_query)
+        results = cursor.fetchone()
+        recipe_count = results[0]
+        cuisine_count = results[1]
+
+        # Get recipes
+        cursor.execute(search_query)
         rows = cursor.fetchall()
         for row in rows:
             recipe_id = row[0]
@@ -336,8 +329,33 @@ def process_search (request):
             }
             recipes.append(recipe)
 
-    review_count = reviews_collection.count_documents({})
-    review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
+        # CGet review count and score
+        if(list_search_terms):
+            # Get target recipes
+            list_recipes = []
+            cursor.execute(base_query)
+            rows = cursor.fetchall()
+            for row in rows:
+                list_recipes.append(row[0])
+            # Get review results
+            review_results = reviews_collection.aggregate([
+                                {'$match': {'RecipeID': {'$in': list_recipes} } },
+                                {'$facet': {'total_reviews': [{'$count': 'count'}], 'average_rating': [{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } } ] } },
+                                {'$project': {'_id': 0, 'review_count': {'$arrayElemAt': ['$total_reviews.count', 0]}, 'avg_rating': {'$round': [{'$arrayElemAt': ['$average_rating.avg_rating', 0]}, 2] } } }
+                            ]).next()
+            # Check for results
+            if(len(review_results.keys()) != 2):
+                review_count = 0
+                review_score = 0
+            else:
+                review_count = review_results['review_count']
+                review_score = review_results['avg_rating']
+        else:
+            review_count = reviews_collection.count_documents({})
+            review_score = reviews_collection.aggregate([
+                                {'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, 
+                                {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }
+                            ]).next()['avg_rating']
 
     # Prepare context
     json_response = {
@@ -349,7 +367,7 @@ def process_search (request):
                         'review_score': review_score,
                         'page_count': math.ceil(recipe_count / 12),
                         'pages': [i for i in range(1, math.ceil(recipe_count / 12) + 1)],
-                        'current_page': new_page
+                        'current_page': requested_page
                     },
                 'recipes': recipes
             }
@@ -357,13 +375,11 @@ def process_search (request):
     # Debugging
     print("POST Data:")
     print("Type:", request_type)
-    print("Current page:", current_page)
-    print("Current offset:", offset)
-    print("Next page:", next_page)
-    print("New offset:", new_offset)
-    print("New page:", new_page)
+    print("Requested page:", requested_page)
+    print("Page offset:", offset)
     print("Search terms:", list_search_terms)
-    print("SQL:", base_query)
+    print("Search SQL:", search_query)
+    print("Count SQL:", count_query)
     # print("Response:", json_response)
 
     # Return response
