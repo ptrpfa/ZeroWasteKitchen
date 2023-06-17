@@ -148,6 +148,33 @@
           </div>
         </div>
       </div>
+
+      <!-- Dietary Restrictions -->
+      <div class="accordion card shadow" id="dietary_restrictions_accordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#restrictions">
+              <h5 class="mt-2">🙅🏻 Any dietary restrictions?</h5>
+            </button>
+          </h2>
+          <div id="restrictions" class="accordion-collapse collapse" data-bs-parent="#dietary_restrictions_accordion">
+            <div class="accordion-body" id="dietary_restrictions">
+              <div class="input-group" id="active_restrictions">
+                {% for restriction in dietary_restrictions.active %}
+                  <button class="btn btn-sm btn-outline-warning alert rounded-pill fade show px-2 py-1 mx-1" type="button" data-dismiss="alert" onclick="remove_restriction(this)" value="{{restriction.RestrictionID}}">{{ restriction.Name }}  <i class="fas fa-times"></i></button>
+                {% endfor %}
+              </div>
+              <div class="input-group" id="inactive_restrictions">
+                {% for restriction in dietary_restrictions.inactive %}
+                  <button class="btn btn-sm btn-outline-primary alert rounded-pill fade show px-2 py-1 mx-1" type="button" data-dismiss="alert" onclick="add_restriction(this)" value="{{restriction.RestrictionID}}">{{ restriction.Name }}  <i class="fas fa-plus"></i></button>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
     </div>
 
     <!-- Results -->
@@ -240,6 +267,10 @@
     $('#user_inputs').children('button').each(function() {
       list_search_terms.push($(this).text().trim());
     });
+    var list_restrictions = []; 
+    $('#active_restrictions').children('button').each(function() {
+      list_restrictions.push($(this).val().trim());
+    });
     // Check if a search term is received
     if(search_term) {
       // Check if ingredient is already in list of searches
@@ -269,7 +300,8 @@
                 "type": request_type,
                 "search": JSON.stringify(list_search_terms),
                 "page": next_page,
-                "strict_mode": strict_mode
+                "strict_mode": strict_mode,
+                "restrictions": JSON.stringify(list_restrictions)
             },
         dataType: 'json',
         success: function (data) {
@@ -373,7 +405,7 @@
     });
     if(!present) {
       // Add to list of ingredients
-      var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)''>" + button.textContent + "  <i class='fas fa-times'></i></button>";
+      var new_ingredient = "<button class='btn btn-sm btn-outline-success alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_ingredient(this)'>" + button.textContent + "  <i class='fas fa-times'></i></button>";
       $('#user_inputs').append(new_ingredient);
       // Trigger search event
       get_search('search');
@@ -389,6 +421,33 @@
         get_search('search');
       }
     });
+  }
+
+  // Function to add dietary restriction
+  function add_restriction(button) {
+    // Add to list of active dietary restrictions
+    var new_restriction = "<button class='btn btn-sm btn-outline-warning alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='remove_restriction(this)' value='" + $(button).attr('value') + "'>" + button.textContent + "  <i class='fas fa-times'></i></button>";
+    $('#active_restrictions').append(new_restriction);
+    // Trigger search event
+    get_search('search');
+  }
+
+  // Function to remove dietary restriction
+  function remove_restriction(button) {
+    var new_restriction = "<button class='btn btn-sm btn-outline-primary alert rounded-pill fade show px-2 py-1 mx-1' type='button' data-dismiss='alert' onclick='add_restriction(this)' value='" + button.getAttribute('value') + "'>" + button.textContent + "  <i class='fas fa-plus'></i></button>";
+    $('#inactive_restrictions').append(new_restriction);
+
+    // Ensure restriction is removed from active restrictions before triggering search event
+    var observer = new MutationObserver(function(mutations) {
+      var restriction_present = $('#active_restrictions').has(button).length > 0;
+      if (!restriction_present) {
+        observer.disconnect();
+        // Trigger search event only once restriction is removed
+        get_search('search');
+      }
+    });
+    var observerConfig = { childList: true, subtree: true };
+    observer.observe($('#active_restrictions')[0], observerConfig);
   }
 
   // Function for reset button

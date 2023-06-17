@@ -168,6 +168,7 @@ def search_recipes(request):
     review_score = None
     recipes = []
     suggested_ingredients = []
+    dietary_restrictions = {'active': [], 'inactive': []}
 
     # Get context values
     with connection.cursor() as cursor:
@@ -195,6 +196,25 @@ def search_recipes(request):
         rows = cursor.fetchall()
         for row in rows:
             suggested_ingredients.append(row[0])
+        cursor.execute("SELECT u.RestrictionID, d.Name FROM userdietrestriction u, dietrestriction d WHERE u.RestrictionID = d.RestrictionID AND u.UserID = " + str(request.user.id))
+        rows = cursor.fetchall()
+        for row in rows:
+            print(row)
+            restriction = {
+                'RestrictionID': row[0],
+                'Name': row[1]    
+            }
+            dietary_restrictions['active'].append(restriction)
+        cursor.execute("SELECT RestrictionID, Name FROM dietrestriction")
+        rows = cursor.fetchall()
+        for row in rows:
+            restriction = {
+                'RestrictionID': row[0],
+                'Name': row[1]    
+            }
+            if(restriction not in dietary_restrictions['active']):
+                dietary_restrictions['inactive'].append(restriction)
+
     review_count = reviews_collection.count_documents({})
     review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
 
@@ -211,7 +231,8 @@ def search_recipes(request):
                         'current_page': 1
                     },
                 'recipes': recipes,
-                'suggested_ingredients': suggested_ingredients
+                'suggested_ingredients': suggested_ingredients,
+                'dietary_restrictions': dietary_restrictions
             }
 
     # Render template
@@ -298,11 +319,12 @@ def process_search (request):
     """
     
     # Get POST data
-    request_type = request.POST.get("type", "")                         # Request type
-    list_search_terms = json.loads(request.POST.get("search", "[]"))    # Search terms
-    requested_page = int(request.POST.get("page", 0))                   # Requested page number
-    offset = (requested_page - 1) * 12                                  # Requested row offset
-    strict_mode = int(request.POST.get("strict_mode", 0))               # Search mode (strict or normal)
+    request_type = request.POST.get("type", "")                                 # Request type
+    list_search_terms = json.loads(request.POST.get("search", "[]"))            # Search terms
+    requested_page = int(request.POST.get("page", 0))                           # Requested page number
+    offset = (requested_page - 1) * 12                                          # Requested row offset
+    strict_mode = int(request.POST.get("strict_mode", 0))                       # Search mode (strict or normal)
+    list_restrictions = json.loads(request.POST.get("restrictions", "[]"))      # Dietary restrictions
 
     # Initialise context variables
     recipe_count = None
@@ -410,6 +432,7 @@ def process_search (request):
     print("Requested page:", requested_page)
     print("Page offset:", offset)
     print("Search terms:", list_search_terms)
+    print("Dietary Restrictions:", list_restrictions)
     print("Search SQL:", search_query)
     print("Count SQL:", count_query)
     # print("Response:", json_response)
