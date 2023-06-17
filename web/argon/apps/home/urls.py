@@ -12,5 +12,7 @@ urlpatterns = [
     path(r'get_suggested_ingredients/', views.get_suggested_ingredients, name='get_suggested_ingredients'),     # Server processing for getting random ingredients
     path('recipe/<int:recipe_id>/add_to_user_recipe/', views.add_to_user_recipe, name='add_to_user_recipe'),    #using this to insert into mapping table userrecipe
     path('recipe/<int:recipe_id>/', views.get_recipes, name='recipe'),                                          #using this to insert into mapping table userrecipe
+    path('recipe/<int:recipe_id>/add_review/', views.add_review, name='add_review'),
+    path('recipe/<int:recipe_id>/', views.view_recipe, name='recipe_details'),
     re_path (r'^.*\.html', views.pages, name='pages')                                                           # Matches any html file
 ]

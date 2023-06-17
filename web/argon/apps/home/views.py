@@ -386,3 +386,43 @@ def process_search (request):
     json_response = json.dumps(json_response)
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
+
+from django.shortcuts import render, redirect
+from pymongo import MongoClient
+
+def add_review(request, recipe_id):
+    if request.method == 'POST':
+        name = request.POST['name']
+        rating = request.POST['rating']
+        text = request.POST['text']
+        
+        # Connect to MongoDB
+        client = MongoClient('mongodb+srv://admin:admin@zerowastekitchen.damsz1o.mongodb.net/?authMechanism=SCRAM-SHA-1')
+        db = client['INF2005_DB']
+        collection = db['Reviews']
+        
+        review = {
+            'Name': name,
+            'Rating': rating,
+            'Text': text,
+            'UserID': request.user.id  # Assuming you have implemented authentication and the user is logged in
+        }
+        
+        # Find the recipe document by RecipeID
+        recipe = collection.find_one({'RecipeID': recipe_id})
+        
+        if recipe is None:
+            # If the recipe doesn't exist, create a new document
+            recipe = {
+                'RecipeID': recipe_id,
+                'Reviews': [review]
+            }
+            collection.insert_one(recipe)
+        else:
+            # If the recipe exists, append the new review to the existing array
+            collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
+        
+        return redirect('recipe_details', recipe_id=recipe_id)
+    
+    return render(request, 'recipe_details.html')
+
