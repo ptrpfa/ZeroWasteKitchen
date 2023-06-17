@@ -275,6 +275,11 @@ def process_search (request):
         JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID
         JOIN ingredient i ON i.IngredientID = ri.IngredientID
         WHERE i.Name LIKE '%fish%' OR i.Name LIKE '%chicken%'
+        EXCEPT
+        SELECT DISTINCT r4.RecipeID
+        FROM recipe r4, recipedietrestriction rdp
+        WHERE r4.RecipeID = rdp.RecipeID 
+        AND rdp.RestrictionID IN (1, 2)
     )
     ORDER BY r1.RecipeID ASC
     LIMIT 12
@@ -295,6 +300,11 @@ def process_search (request):
         JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID
         JOIN ingredient i ON i.IngredientID = ri.IngredientID
         WHERE i.Name LIKE '%fish%' OR i.Name LIKE '%chicken%'
+        EXCEPT
+        SELECT DISTINCT r4.RecipeID
+        FROM recipe r4, recipedietrestriction rdp
+        WHERE r4.RecipeID = rdp.RecipeID 
+        AND rdp.RestrictionID IN (1, 2)
         )
         GROUP BY r3.RecipeID
         HAVING COUNT(ri2.MappingID) <= 15
@@ -349,13 +359,22 @@ def process_search (request):
             base_query = base_query % (search, str(len(list_search_terms)))
         else:
             base_query += search
+        if(list_restrictions):
+            search = ', '.join(list_restrictions)
+            base_query += " EXCEPT SELECT DISTINCT r4.RecipeID FROM recipe r4, recipedietrestriction rdp WHERE r4.RecipeID = rdp.RecipeID AND rdp.RestrictionID IN (%s)" % search
         search_query += "WHERE r1.RecipeID IN (%s) " % base_query
         count_query = "SELECT COUNT(DISTINCT(temp.RecipeID)), COUNT(DISTINCT(temp.Cuisine)) FROM (" + search_query + ") temp;"
         search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
     else:
-        # No search items
-        count_query = "SELECT COUNT(*), COUNT(DISTINCT(Cuisine)) FROM recipe;"
-        search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
+        if(list_restrictions):
+            search = ', '.join(list_restrictions)
+            search_query += "WHERE r1.RecipeID NOT IN (SELECT DISTINCT r4.RecipeID FROM recipe r4, recipedietrestriction rdp WHERE r4.RecipeID = rdp.RecipeID AND rdp.RestrictionID IN (%s))" % search
+            count_query = "SELECT COUNT(DISTINCT(temp.RecipeID)), COUNT(DISTINCT(temp.Cuisine)) FROM (" + search_query + ") temp;"
+            search_query += " ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
+        else:
+            # No search items
+            count_query = "SELECT COUNT(*), COUNT(DISTINCT(Cuisine)) FROM recipe;"
+            search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
 
     # Get context values
     with connection.cursor() as cursor:
