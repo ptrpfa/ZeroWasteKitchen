@@ -110,7 +110,13 @@
           <div class="card shadow">
             <div class="card-body">
               <!-- Search Bar -->
-              <h4 class="mb-4">What ingredients do you have? 🤔</h4>
+              <div class="d-flex">
+                <h4 class="mb-4 me-auto">What ingredients do you have? 🤔</h4>
+                <div class="form-check form-switch">
+                  <input class="form-check-input align-middle" type="checkbox" role="switch" id="strict_mode" onclick="get_search('search');">
+                  <label class="form-check-label align-middle mb-2 font-italic" for="strict_mode">Find exact matches?</label>
+                </div>
+              </div>
               <div class="input-group input-group-alternative input-group-merge">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -248,6 +254,8 @@
       // Clear search bar
       $('#search_bar').val('');
     }
+    // Get search mode
+    var strict_mode = $('#strict_mode').is(':checked') ? 1 : 0;
 
     // Show loading screen
     var old_recipes = set_loading_screen();
@@ -260,7 +268,8 @@
                 "csrfmiddlewaretoken": "{{ csrf_token }}",
                 "type": request_type,
                 "search": JSON.stringify(list_search_terms),
-                "page": next_page 
+                "page": next_page,
+                "strict_mode": strict_mode
             },
         dataType: 'json',
         success: function (data) {

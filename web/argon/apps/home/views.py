@@ -245,7 +245,7 @@ def get_suggested_ingredients(request):
 @post_request_only
 def process_search (request): 
     """ 
-    Base SQL (view all recipes):
+    Base SQL (Normal Mode):
     SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine
     FROM recipe r1
     WHERE r1.RecipeID IN (
@@ -258,7 +258,31 @@ def process_search (request):
     ORDER BY r1.RecipeID ASC
     LIMIT 12
     OFFSET 0;
+    
+    -----
 
+    Base SQL (Strict Mode):
+    SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine
+    FROM recipe r1
+    WHERE r1.RecipeID IN (
+        SELECT DISTINCT r3.RecipeID
+        FROM recipe r3
+        JOIN recipeingredient ri2 ON r3.RecipeID = ri2.RecipeID
+        WHERE r3.RecipeID IN (
+        SELECT DISTINCT r2.RecipeID
+        FROM recipe r2
+        JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID
+        JOIN ingredient i ON i.IngredientID = ri.IngredientID
+        WHERE i.Name LIKE '%fish%' OR i.Name LIKE '%chicken%'
+        )
+        GROUP BY r3.RecipeID
+        HAVING COUNT(ri2.MappingID) <= 15
+    )
+    ORDER BY r1.RecipeID ASC
+    LIMIT 12
+    OFFSET 0;
+
+    -----
 
     Advanced search:
     SELECT DISTINCT(RecipeIngredient.RecipeID)
@@ -278,6 +302,7 @@ def process_search (request):
     list_search_terms = json.loads(request.POST.get("search", "[]"))    # Search terms
     requested_page = int(request.POST.get("page", 0))                   # Requested page number
     offset = (requested_page - 1) * 12                                  # Requested row offset
+    strict_mode = int(request.POST.get("strict_mode", 0))               # Search mode (strict or normal)
 
     # Initialise context variables
     recipe_count = None
@@ -288,14 +313,20 @@ def process_search (request):
     
     # Prepare queries
     search_query = "SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine FROM recipe r1 "  
-    base_query = "SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE "
+    if(strict_mode):
+        base_query = "SELECT DISTINCT r3.RecipeID FROM recipe r3 JOIN recipeingredient ri2 ON r3.RecipeID = ri2.RecipeID WHERE r3.RecipeID IN (SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE %s) GROUP BY r3.RecipeID HAVING COUNT(ri2.MappingID) <= %s"
+    else:
+        base_query = "SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE "
 
     # Check search terms
     if(list_search_terms):
         # Parse search items
         list_search_terms = ["i.Name LIKE '%%%s%%'" % i for i in list_search_terms]
         search = ' OR '.join(list_search_terms)
-        base_query += search
+        if(strict_mode):
+            base_query = base_query % (search, str(len(list_search_terms)))
+        else:
+            base_query += search
         search_query += "WHERE r1.RecipeID IN (%s) " % base_query
         count_query = "SELECT COUNT(DISTINCT(temp.RecipeID)), COUNT(DISTINCT(temp.Cuisine)) FROM (" + search_query + ") temp;"
         search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
@@ -375,6 +406,7 @@ def process_search (request):
     # Debugging
     print("POST Data:")
     print("Type:", request_type)
+    print("Strict Mode:", strict_mode)
     print("Requested page:", requested_page)
     print("Page offset:", offset)
     print("Search terms:", list_search_terms)
@@ -390,6 +422,7 @@ def process_search (request):
 from django.shortcuts import render, redirect
 from pymongo import MongoClient
 
+@login_required(login_url="/login/")  
 def add_review(request, recipe_id):
     if request.method == 'POST':
         name = request.POST['name']
