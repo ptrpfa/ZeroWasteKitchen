@@ -198,69 +198,98 @@ def search_recipes(request):
     suggested_ingredients = []
     dietary_restrictions = {'active': [], 'inactive': []}
 
-    # Get context values
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM recipe;")
-        recipe_count = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
-        cuisine_count = cursor.fetchone()[0]
-        cursor.execute("SELECT RecipeID, Name, Description, MealType, Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET 0;")
-        rows = cursor.fetchall()
-        for row in rows:
-            recipe_id = row[0]
-            instruction = instructions_collection.find_one({'RecipeID': recipe_id})
-            image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
+    # Get user session data, if any
+    if('last_search' in request.session):
+        # Restore user session values
+        context = request.session['last_search']
+        active_restrictions = request.session['last_search']['dietary_restrictions']
 
-            recipe = {
-                'RecipeID': recipe_id,
-                'Name': row[1],
-                'Description': row[2],
-                'MealType': row[3],
-                'Cuisine': row[4],
-                'Image': image_url,
-            }
-            recipes.append(recipe)
-        cursor.execute("SELECT name FROM ingredient ORDER BY RAND() LIMIT 20;")
-        rows = cursor.fetchall()
-        for row in rows:
-            suggested_ingredients.append(row[0])
-        cursor.execute("SELECT u.RestrictionID, d.Name FROM userdietrestriction u, dietrestriction d WHERE u.RestrictionID = d.RestrictionID AND u.UserID = " + str(request.user.id))
-        rows = cursor.fetchall()
-        for row in rows:
-            restriction = {
-                'RestrictionID': row[0],
-                'Name': row[1]    
-            }
-            dietary_restrictions['active'].append(restriction)
-        cursor.execute("SELECT RestrictionID, Name FROM dietrestriction")
-        rows = cursor.fetchall()
-        for row in rows:
-            restriction = {
-                'RestrictionID': row[0],
-                'Name': row[1]    
-            }
-            if(restriction not in dietary_restrictions['active']):
-                dietary_restrictions['inactive'].append(restriction)
+        # Get context values
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM ingredient ORDER BY RAND() LIMIT 20;")
+            rows = cursor.fetchall()
+            for row in rows:
+                suggested_ingredients.append(row[0])
+            cursor.execute("SELECT RestrictionID, Name FROM dietrestriction")
+            rows = cursor.fetchall()
+            for row in rows:
+                restriction = {
+                    'RestrictionID': row[0],
+                    'Name': row[1]    
+                }
+                if(str(row[0]) in active_restrictions):
+                    dietary_restrictions['active'].append(restriction)
+                else:
+                    dietary_restrictions['inactive'].append(restriction)
+        
+        # Update context
+        context['suggested_ingredients'] = suggested_ingredients
+        context['dietary_restrictions'] = dietary_restrictions
+        print("restored state!")
+    else:
+        # Get context values
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM recipe;")
+            recipe_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
+            cuisine_count = cursor.fetchone()[0]
+            cursor.execute("SELECT RecipeID, Name, Description, MealType, Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET 0;")
+            rows = cursor.fetchall()
+            for row in rows:
+                recipe_id = row[0]
+                instruction = instructions_collection.find_one({'RecipeID': recipe_id})
+                image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
 
-    review_count = reviews_collection.count_documents({})
-    review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
+                recipe = {
+                    'RecipeID': recipe_id,
+                    'Name': row[1],
+                    'Description': row[2],
+                    'MealType': row[3],
+                    'Cuisine': row[4],
+                    'Image': image_url,
+                }
+                recipes.append(recipe)
+            cursor.execute("SELECT name FROM ingredient ORDER BY RAND() LIMIT 20;")
+            rows = cursor.fetchall()
+            for row in rows:
+                suggested_ingredients.append(row[0])
+            cursor.execute("SELECT u.RestrictionID, d.Name FROM userdietrestriction u, dietrestriction d WHERE u.RestrictionID = d.RestrictionID AND u.UserID = " + str(request.user.id))
+            rows = cursor.fetchall()
+            for row in rows:
+                restriction = {
+                    'RestrictionID': row[0],
+                    'Name': row[1]    
+                }
+                dietary_restrictions['active'].append(restriction)
+            cursor.execute("SELECT RestrictionID, Name FROM dietrestriction")
+            rows = cursor.fetchall()
+            for row in rows:
+                restriction = {
+                    'RestrictionID': row[0],
+                    'Name': row[1]    
+                }
+                if(restriction not in dietary_restrictions['active']):
+                    dietary_restrictions['inactive'].append(restriction)
 
-    # Prepare context
-    context = {
-                'segment': 'search_recipe',
-                'results': {
-                        'recipe_count': recipe_count,
-                        'cuisine_count': cuisine_count,
-                        'review_count': review_count,
-                        'review_score': review_score,
-                        'page_count': math.ceil(recipe_count / 12),
-                        'pages': [ i for i in range(1, math.ceil(recipe_count / 12) + 1)],
-                        'current_page': 1
-                    },
-                'recipes': recipes,
-                'suggested_ingredients': suggested_ingredients,
-                'dietary_restrictions': dietary_restrictions
-            }
+        review_count = reviews_collection.count_documents({})
+        review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
+
+        # Prepare context
+        context = {
+                    'segment': 'search_recipe',
+                    'results': {
+                            'recipe_count': recipe_count,
+                            'cuisine_count': cuisine_count,
+                            'review_count': review_count,
+                            'review_score': review_score,
+                            'page_count': math.ceil(recipe_count / 12),
+                            'pages': [ i for i in range(1, math.ceil(recipe_count / 12) + 1)],
+                            'current_page': 1
+                        },
+                    'recipes': recipes,
+                    'suggested_ingredients': suggested_ingredients,
+                    'dietary_restrictions': dietary_restrictions
+                }
 
     # Render template
     html_template = loader.get_template('recipe/search.html')
@@ -318,7 +347,7 @@ def process_search (request):
     
     ) count_results
     """
-
+    
     # Get POST data
     request_type = request.POST.get("type", "")                                 # Request type
     list_search_terms = json.loads(request.POST.get("search", "[]"))            # Search terms
@@ -460,8 +489,14 @@ def process_search (request):
                         'pages': [i for i in range(1, math.ceil(recipe_count / 12) + 1)],
                         'current_page': requested_page
                     },
-                'recipes': recipes
+                'recipes': recipes,
+                'dietary_restrictions': list_restrictions,
+                'strict_mode': strict_mode,
+                'searches': list_search_terms
             }
+
+    # Save context to user's session
+    request.session['last_search'] = json_response
 
     # Debugging
     print("POST Data:")
