@@ -167,24 +167,16 @@ def search_recipes(request):
         SELECT base_r.RecipeID, base_r.Name, base_r.Description, base_r.MealType, base_r.Cuisine FROM recipe base_r
 
         Query:
-        WHERE base_r.RecipeID IN (
-            Strict search
-            SELECT DISTINCT strict_r.RecipeID
-            FROM recipe strict_r
-            JOIN recipeingredient strict_ri ON strict_r.RecipeID = strict_ri.RecipeID
-            WHERE strict_r.RecipeID NOT IN (
-                Diet restriction:
-                SELECT DISTINCT diet_r.RecipeID
-                FROM recipe diet_r, recipedietrestriction diet_rdp
-                WHERE diet_r.RecipeID = diet_rdp.RecipeID 
-                AND diet_rdp.RestrictionID IN (%s, %s)
-            )
-            GROUP BY strict_r.RecipeID
-            HAVING COUNT(strict_ri.MappingID) <= %s
+        WHERE base_r.RecipeID NOT IN (
+            Diet restriction:
+            SELECT DISTINCT diet_r.RecipeID
+            FROM recipe diet_r, recipedietrestriction diet_rdp
+            WHERE diet_r.RecipeID = diet_rdp.RecipeID 
+            AND diet_rdp.RestrictionID IN (%s, %s)
         )
 
         Offset:
-        ORDER BY base_r.RecipeID ASC LIMIT 12 OFFSET %s;
+        ORDER BY base_r.RecipeID ASC LIMIT 12 OFFSET 0;
     
     ) count_results
     """
@@ -200,6 +192,7 @@ def search_recipes(request):
 
     # Get user session data, if any
     if('last_search' in request.session):
+        print("Restored session!")
         # Restore user session values
         context = request.session['last_search']
         active_restrictions = request.session['last_search']['dietary_restrictions']
@@ -225,30 +218,9 @@ def search_recipes(request):
         # Update context
         context['suggested_ingredients'] = suggested_ingredients
         context['dietary_restrictions'] = dietary_restrictions
-        print("restored state!")
     else:
         # Get context values
         with connection.cursor() as cursor:
-            cursor.execute("SELECT COUNT(*) FROM recipe;")
-            recipe_count = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(DISTINCT(Cuisine)) FROM recipe;")
-            cuisine_count = cursor.fetchone()[0]
-            cursor.execute("SELECT RecipeID, Name, Description, MealType, Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET 0;")
-            rows = cursor.fetchall()
-            for row in rows:
-                recipe_id = row[0]
-                instruction = instructions_collection.find_one({'RecipeID': recipe_id})
-                image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
-
-                recipe = {
-                    'RecipeID': recipe_id,
-                    'Name': row[1],
-                    'Description': row[2],
-                    'MealType': row[3],
-                    'Cuisine': row[4],
-                    'Image': image_url,
-                }
-                recipes.append(recipe)
             cursor.execute("SELECT name FROM ingredient ORDER BY RAND() LIMIT 20;")
             rows = cursor.fetchall()
             for row in rows:
@@ -270,9 +242,92 @@ def search_recipes(request):
                 }
                 if(restriction not in dietary_restrictions['active']):
                     dietary_restrictions['inactive'].append(restriction)
+            
+            # Check if user has any active dietary restrictions
+            if(dietary_restrictions['active']):
+                print("User with dietary restrictions!")
+                # Initialise queries
+                count_sql = "SELECT COUNT(DISTINCT(count_results.RecipeID)), COUNT(DISTINCT(count_results.Cuisine)) FROM (%s) count_results"
+                base_sql = "SELECT base_r.RecipeID, base_r.Name, base_r.Description, base_r.MealType, base_r.Cuisine FROM recipe base_r"
+                diet_sql = "SELECT DISTINCT diet_r.RecipeID FROM recipe diet_r, recipedietrestriction diet_rdp WHERE diet_r.RecipeID = diet_rdp.RecipeID AND diet_rdp.RestrictionID IN (%s)"
+                offset_sql = "ORDER BY base_r.RecipeID ASC LIMIT 12 OFFSET 0"
 
-        review_count = reviews_collection.count_documents({})
-        review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
+                # Parse queries
+                restrictions = ', '.join(str(i['RestrictionID']) for i in dietary_restrictions['active'])
+                diet_sql = diet_sql % restrictions
+                query_sql = "WHERE base_r.RecipeID NOT IN (%s)" % (diet_sql)
+                sql = base_sql + " " + query_sql
+                count_sql = count_sql % (sql)
+                recipes_sql = sql
+                sql = sql + " " + offset_sql
+
+                # Get recipe and cuisine count
+                cursor.execute(count_sql)
+                results = cursor.fetchone()
+                recipe_count = results[0]
+                cuisine_count = results[1]
+
+                # Get recipes
+                cursor.execute(sql)
+                rows = cursor.fetchall()
+                for row in rows:
+                    recipe_id = row[0]
+                    instruction = instructions_collection.find_one({'RecipeID': recipe_id})
+                    image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
+                    recipe = {
+                        'RecipeID': recipe_id,
+                        'Name': row[1],
+                        'Description': row[2],
+                        'MealType': row[3],
+                        'Cuisine': row[4],
+                        'Image': image_url,
+                    }
+                    recipes.append(recipe)
+
+                # Get review count and score
+                # Get target recipes
+                list_recipes = []
+                cursor.execute(recipes_sql)
+                rows = cursor.fetchall()
+                for row in rows:
+                    list_recipes.append(row[0])
+                # Get review results
+                review_results = reviews_collection.aggregate([
+                                    {'$match': {'RecipeID': {'$in': list_recipes} } },
+                                    {'$facet': {'total_reviews': [{'$count': 'count'}], 'average_rating': [{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } } ] } },
+                                    {'$project': {'_id': 0, 'review_count': {'$arrayElemAt': ['$total_reviews.count', 0]}, 'avg_rating': {'$round': [{'$arrayElemAt': ['$average_rating.avg_rating', 0]}, 2] } } }
+                                ]).next()
+                # Check for results
+                if(len(review_results.keys()) != 2):
+                    review_count = 0
+                    review_score = 0
+                else:
+                    review_count = review_results['review_count']
+                    review_score = review_results['avg_rating']
+            else:
+                print("User without dietary restrictions!")
+                cursor.execute("SELECT COUNT(DISTINCT(RecipeID)), COUNT(DISTINCT(Cuisine)) FROM recipe;")
+                results = cursor.fetchone()
+                recipe_count = results[0]
+                cuisine_count = results[1]
+                cursor.execute("SELECT RecipeID, Name, Description, MealType, Cuisine FROM recipe ORDER BY RecipeID ASC LIMIT 12 OFFSET 0;")
+                rows = cursor.fetchall()
+                for row in rows:
+                    recipe_id = row[0]
+                    instruction = instructions_collection.find_one({'RecipeID': recipe_id})
+                    image_url = instruction.get('Image', "/static/assets/img/food/zwk.png")
+
+                    recipe = {
+                        'RecipeID': recipe_id,
+                        'Name': row[1],
+                        'Description': row[2],
+                        'MealType': row[3],
+                        'Cuisine': row[4],
+                        'Image': image_url,
+                    }
+                    recipes.append(recipe)
+                review_count = reviews_collection.count_documents({})
+                review_score = reviews_collection.aggregate([{'$group': {'_id': None, 'avg_rating': {'$avg': '$Overall_Rating'} } }, {'$project': {'_id': 0, 'avg_rating': {'$round': ['$avg_rating',2] } } }]).next()['avg_rating']
 
         # Prepare context
         context = {
