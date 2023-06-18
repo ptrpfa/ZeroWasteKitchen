@@ -114,7 +114,8 @@
                 <h4 class="mb-4 me-auto">What ingredients do you have? 🤔</h4>
                 <div class="form-check form-switch">
                   <input class="form-check-input align-middle" type="checkbox" role="switch" id="strict_mode" onclick="get_search('search');" {% if strict_mode|default:0 == 1 %}checked{% else %}{% endif %}>
-                  <label class="form-check-label align-middle mb-2 font-italic" for="strict_mode">Find exact matches?</label>
+                  <label class="form-check-label align-middle mb-3 font-italic" for="strict_mode">Find exact matches?</label>
+                  <button type="button" class="btn btn-sm btn-outline-success mb-2 ml-2" onclick="reset_filters()">Clear Search</button>
                 </div>
               </div>
               <div class="input-group input-group-alternative input-group-merge">
@@ -454,8 +455,14 @@
   }
 
   // Function for reset button
-
-  /* Table filters */
+  function reset_filters() {
+    // Reset search terms only
+    $("#user_inputs").find("button").each(function() {
+      $(this).remove();
+    });
+    // Trigger search event
+    get_search('search');
+  }
 
   // Preload functions
   $(document).ready(function() {
