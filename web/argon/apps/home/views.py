@@ -153,12 +153,40 @@ def add_to_user_recipe(request, recipe_id):
 @login_required(login_url="/login/")
 def search_recipes(request):
     """ 
-    Base SQL (view all recipes):
-    SELECT RecipeID, Name, Description, MealType, Cuisine 
-    FROM recipe 
-    ORDER BY RecipeID ASC
-    LIMIT 12
-    OFFSET xx
+    Query Structure:
+    count_sql
+        base_sql
+        query_sql
+            diet_sql
+        offset_sql
+
+    Count:
+    SELECT COUNT(DISTINCT(count_results.RecipeID)), COUNT(DISTINCT(count_results.Cuisine)) FROM (
+
+        Base search:
+        SELECT base_r.RecipeID, base_r.Name, base_r.Description, base_r.MealType, base_r.Cuisine FROM recipe base_r
+
+        Query:
+        WHERE base_r.RecipeID IN (
+            Strict search
+            SELECT DISTINCT strict_r.RecipeID
+            FROM recipe strict_r
+            JOIN recipeingredient strict_ri ON strict_r.RecipeID = strict_ri.RecipeID
+            WHERE strict_r.RecipeID NOT IN (
+                Diet restriction:
+                SELECT DISTINCT diet_r.RecipeID
+                FROM recipe diet_r, recipedietrestriction diet_rdp
+                WHERE diet_r.RecipeID = diet_rdp.RecipeID 
+                AND diet_rdp.RestrictionID IN (%s, %s)
+            )
+            GROUP BY strict_r.RecipeID
+            HAVING COUNT(strict_ri.MappingID) <= %s
+        )
+
+        Offset:
+        ORDER BY base_r.RecipeID ASC LIMIT 12 OFFSET %s;
+    
+    ) count_results
     """
 
     # Initialise context variables
@@ -199,7 +227,6 @@ def search_recipes(request):
         cursor.execute("SELECT u.RestrictionID, d.Name FROM userdietrestriction u, dietrestriction d WHERE u.RestrictionID = d.RestrictionID AND u.UserID = " + str(request.user.id))
         rows = cursor.fetchall()
         for row in rows:
-            print(row)
             restriction = {
                 'RestrictionID': row[0],
                 'Name': row[1]    
@@ -239,95 +266,59 @@ def search_recipes(request):
     html_template = loader.get_template('recipe/search.html')
     return HttpResponse(html_template.render(context, request))
 
-@login_required(login_url="/login/")
-@post_request_only
-def get_suggested_ingredients(request):
-    # Initialise context variables
-    suggested_ingredients = []
-
-    # Get context values
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT name FROM ingredient ORDER BY RAND() LIMIT 20;")
-        rows = cursor.fetchall()
-        for row in rows:
-            suggested_ingredients.append(row[0])
-
-    # Prepare context
-    json_response = {
-                'suggested_ingredients': suggested_ingredients
-            }
-
-    # Return response
-    json_response = json.dumps(json_response)
-    # Return response
-    return HttpResponse (json_response, content_type='application/json;charset=utf-8')
-
 @login_required(login_url="/login/")  
 @post_request_only
 def process_search (request): 
     """ 
-    Base SQL (Normal Mode):
-    SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine
-    FROM recipe r1
-    WHERE r1.RecipeID IN (
-        SELECT DISTINCT r2.RecipeID
-        FROM recipe r2
-        JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID
-        JOIN ingredient i ON i.IngredientID = ri.IngredientID
-        WHERE i.Name LIKE '%fish%' OR i.Name LIKE '%chicken%'
-        EXCEPT
-        SELECT DISTINCT r4.RecipeID
-        FROM recipe r4, recipedietrestriction rdp
-        WHERE r4.RecipeID = rdp.RecipeID 
-        AND rdp.RestrictionID IN (1, 2)
-    )
-    ORDER BY r1.RecipeID ASC
-    LIMIT 12
-    OFFSET 0;
-    
-    -----
+    Query Structure:
+    count_sql
+        base_sql
+        query_sql
+            strict_sql
+                normal_sql
+                diet_sql
+        offset_sql
 
-    Base SQL (Strict Mode):
-    SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine
-    FROM recipe r1
-    WHERE r1.RecipeID IN (
-        SELECT DISTINCT r3.RecipeID
-        FROM recipe r3
-        JOIN recipeingredient ri2 ON r3.RecipeID = ri2.RecipeID
-        WHERE r3.RecipeID IN (
-        SELECT DISTINCT r2.RecipeID
-        FROM recipe r2
-        JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID
-        JOIN ingredient i ON i.IngredientID = ri.IngredientID
-        WHERE i.Name LIKE '%fish%' OR i.Name LIKE '%chicken%'
-        EXCEPT
-        SELECT DISTINCT r4.RecipeID
-        FROM recipe r4, recipedietrestriction rdp
-        WHERE r4.RecipeID = rdp.RecipeID 
-        AND rdp.RestrictionID IN (1, 2)
+    Count:
+    SELECT COUNT(DISTINCT(count_results.RecipeID)), COUNT(DISTINCT(count_results.Cuisine)) FROM (
+
+        Base search:
+        SELECT base_r.RecipeID, base_r.Name, base_r.Description, base_r.MealType, base_r.Cuisine FROM recipe base_r
+
+        Query:
+        WHERE base_r.RecipeID IN (
+
+            Strict search
+            SELECT DISTINCT strict_r.RecipeID
+            FROM recipe strict_r
+            JOIN recipeingredient strict_ri ON strict_r.RecipeID = strict_ri.RecipeID
+            WHERE strict_r.RecipeID IN (
+
+                Normal search:
+                SELECT DISTINCT normal_r.RecipeID
+                FROM recipe normal_r
+                JOIN recipeingredient normal_ri ON normal_r.RecipeID = normal_ri.RecipeID
+                JOIN ingredient normal_i ON normal_i.IngredientID = normal_ri.IngredientID
+                WHERE normal_i.Name LIKE '%fish%' OR normal_i.Name LIKE '%chicken%'
+
+                Diet restriction:
+                EXCEPT
+                SELECT DISTINCT diet_r.RecipeID
+                FROM recipe diet_r, recipedietrestriction diet_rdp
+                WHERE diet_r.RecipeID = diet_rdp.RecipeID 
+                AND diet_rdp.RestrictionID IN (%s, %s)
+            )
+            GROUP BY strict_r.RecipeID
+            HAVING COUNT(strict_ri.MappingID) <= %s
+
         )
-        GROUP BY r3.RecipeID
-        HAVING COUNT(ri2.MappingID) <= 15
-    )
-    ORDER BY r1.RecipeID ASC
-    LIMIT 12
-    OFFSET 0;
 
-    -----
-
-    Advanced search:
-    SELECT DISTINCT(RecipeIngredient.RecipeID)
-    FROM RecipeIngredient
-    WHERE RecipeIngredient.IngredientID IN (SELECT Ingredient.IngredientID
-    FROM Ingredient
-    WHERE Ingredient.Name LIKE '%chilli%'
-        OR Ingredient.Name LIKE '%rice%'
-        OR Ingredient.Name LIKE '%salt%')
-    AND RecipeIngredient.RecipeID NOT IN (SELECT RecipeID
-    FROM RecipeDietaryRestriction
-    WHERE DietaryRestrictionID IN (SELECT DietaryRestrictionID FROM UserDietaryRestriction WHERE UserID = X));
-    """
+        Offset:
+        ORDER BY base_r.RecipeID ASC LIMIT 12 OFFSET %s;
     
+    ) count_results
+    """
+
     # Get POST data
     request_type = request.POST.get("type", "")                                 # Request type
     list_search_terms = json.loads(request.POST.get("search", "[]"))            # Search terms
@@ -342,50 +333,78 @@ def process_search (request):
     review_count = None
     review_score = None
     recipes = []
-    
-    # Prepare queries
-    search_query = "SELECT r1.RecipeID, r1.Name, r1.Description, r1.MealType, r1.Cuisine FROM recipe r1 "  
-    if(strict_mode):
-        base_query = "SELECT DISTINCT r3.RecipeID FROM recipe r3 JOIN recipeingredient ri2 ON r3.RecipeID = ri2.RecipeID WHERE r3.RecipeID IN (SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE %s) GROUP BY r3.RecipeID HAVING COUNT(ri2.MappingID) <= %s"
-    else:
-        base_query = "SELECT DISTINCT r2.RecipeID FROM recipe r2 JOIN recipeingredient ri ON r2.RecipeID = ri.RecipeID JOIN ingredient i ON i.IngredientID = ri.IngredientID WHERE "
 
-    # Check search terms
+    # Initialise SQL
+    count_sql = "SELECT COUNT(DISTINCT(count_results.RecipeID)), COUNT(DISTINCT(count_results.Cuisine)) FROM (%s) count_results"
+    base_sql = "SELECT base_r.RecipeID, base_r.Name, base_r.Description, base_r.MealType, base_r.Cuisine FROM recipe base_r"
+    strict_sql = "SELECT DISTINCT strict_r.RecipeID FROM recipe strict_r JOIN recipeingredient strict_ri ON strict_r.RecipeID = strict_ri.RecipeID WHERE strict_r.RecipeID IN (%s) GROUP BY strict_r.RecipeID HAVING COUNT(strict_ri.MappingID) <= %s"
+    normal_sql = "SELECT DISTINCT normal_r.RecipeID FROM recipe normal_r JOIN recipeingredient normal_ri ON normal_r.RecipeID = normal_ri.RecipeID JOIN ingredient normal_i ON normal_i.IngredientID = normal_ri.IngredientID WHERE %s"
+    diet_sql = "EXCEPT SELECT DISTINCT diet_r.RecipeID FROM recipe diet_r, recipedietrestriction diet_rdp WHERE diet_r.RecipeID = diet_rdp.RecipeID AND diet_rdp.RestrictionID IN (%s)"
+    offset_sql = "ORDER BY base_r.RecipeID ASC LIMIT 12 OFFSET %s"
+
+    """ Parse query SQL """
+    # Check for search terms
     if(list_search_terms):
+        # Initialise query
+        query_sql = "WHERE base_r.RecipeID IN (%s)"
+
         # Parse search items
-        list_search_terms = ["i.Name LIKE '%%%s%%'" % i for i in list_search_terms]
-        search = ' OR '.join(list_search_terms)
+        search_terms = ["normal_i.Name LIKE '%%%s%%'" % clean_input(i) for i in list_search_terms]
+        searches = ' OR '.join(search_terms)
+        # Parse normal search SQL
+        normal_sql = normal_sql % searches
+
+        # Check dietary restrictions
+        if(list_restrictions):
+            restrictions = ', '.join(list_restrictions)
+            # Parse diet SQL
+            diet_sql = diet_sql % restrictions
+
+        # Check strict mode
         if(strict_mode):
-            base_query = base_query % (search, str(len(list_search_terms)))
+            # Parse strict SQL
+            if(list_restrictions):
+                strict_sql = strict_sql % (normal_sql + " " + diet_sql, str(len(list_search_terms)))
+            else:
+                strict_sql = strict_sql % (normal_sql, str(len(list_search_terms)))
+            # Parse query SQL
+            query_sql = query_sql % strict_sql
         else:
-            base_query += search
-        if(list_restrictions):
-            search = ', '.join(list_restrictions)
-            base_query += " EXCEPT SELECT DISTINCT r4.RecipeID FROM recipe r4, recipedietrestriction rdp WHERE r4.RecipeID = rdp.RecipeID AND rdp.RestrictionID IN (%s)" % search
-        search_query += "WHERE r1.RecipeID IN (%s) " % base_query
-        count_query = "SELECT COUNT(DISTINCT(temp.RecipeID)), COUNT(DISTINCT(temp.Cuisine)) FROM (" + search_query + ") temp;"
-        search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
+            # Parse query SQL
+            if(list_restrictions):
+                query_sql = query_sql % (normal_sql + " " + diet_sql)
+            else:
+                query_sql = query_sql % (normal_sql)
     else:
+        # Initialise query
+        query_sql = ""
+
+        # Check dietary restrictions
         if(list_restrictions):
-            search = ', '.join(list_restrictions)
-            search_query += "WHERE r1.RecipeID NOT IN (SELECT DISTINCT r4.RecipeID FROM recipe r4, recipedietrestriction rdp WHERE r4.RecipeID = rdp.RecipeID AND rdp.RestrictionID IN (%s))" % search
-            count_query = "SELECT COUNT(DISTINCT(temp.RecipeID)), COUNT(DISTINCT(temp.Cuisine)) FROM (" + search_query + ") temp;"
-            search_query += " ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
-        else:
-            # No search items
-            count_query = "SELECT COUNT(*), COUNT(DISTINCT(Cuisine)) FROM recipe;"
-            search_query += "ORDER BY r1.RecipeID ASC LIMIT 12 OFFSET %s;" % offset
+            restrictions = ', '.join(list_restrictions)
+            # Parse diet SQL
+            diet_sql = diet_sql % restrictions
+            query_sql = "WHERE base_r.RecipeID NOT IN (%s)" % (diet_sql.replace("EXCEPT ", ""))
+
+    """ Parse offset SQL """
+    offset_sql = offset_sql % (offset)
+
+    """ Parse queries """
+    sql = base_sql + " " + query_sql
+    count_sql = count_sql % (sql)
+    recipes_sql = sql
+    sql = sql + " " + offset_sql
 
     # Get context values
     with connection.cursor() as cursor:
         # Get recipe and cuisine count
-        cursor.execute(count_query)
+        cursor.execute(count_sql)
         results = cursor.fetchone()
         recipe_count = results[0]
         cuisine_count = results[1]
 
         # Get recipes
-        cursor.execute(search_query)
+        cursor.execute(sql)
         rows = cursor.fetchall()
         for row in rows:
             recipe_id = row[0]
@@ -401,11 +420,11 @@ def process_search (request):
             }
             recipes.append(recipe)
 
-        # CGet review count and score
+        # Get review count and score
         if(list_search_terms):
             # Get target recipes
             list_recipes = []
-            cursor.execute(base_query)
+            cursor.execute(recipes_sql)
             rows = cursor.fetchall()
             for row in rows:
                 list_recipes.append(row[0])
@@ -452,8 +471,8 @@ def process_search (request):
     print("Page offset:", offset)
     print("Search terms:", list_search_terms)
     print("Dietary Restrictions:", list_restrictions)
-    print("Search SQL:", search_query)
-    print("Count SQL:", count_query)
+    print("Search SQL:", sql)
+    print("Count SQL:", count_sql)
     # print("Response:", json_response)
 
     # Return response
@@ -461,8 +480,28 @@ def process_search (request):
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
-from django.shortcuts import render, redirect
-from pymongo import MongoClient
+@login_required(login_url="/login/")
+@post_request_only
+def get_suggested_ingredients(request):
+    # Initialise context variables
+    suggested_ingredients = []
+
+    # Get context values
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT name FROM ingredient ORDER BY RAND() LIMIT 20;")
+        rows = cursor.fetchall()
+        for row in rows:
+            suggested_ingredients.append(row[0])
+
+    # Prepare context
+    json_response = {
+                'suggested_ingredients': suggested_ingredients
+            }
+
+    # Return response
+    json_response = json.dumps(json_response)
+    # Return response
+    return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
 @login_required(login_url="/login/")  
 def add_review(request, recipe_id):
@@ -470,11 +509,6 @@ def add_review(request, recipe_id):
         name = request.POST['name']
         rating = request.POST['rating']
         text = request.POST['text']
-        
-        # Connect to MongoDB
-        client = MongoClient('mongodb+srv://admin:admin@zerowastekitchen.damsz1o.mongodb.net/?authMechanism=SCRAM-SHA-1')
-        db = client['INF2005_DB']
-        collection = db['Reviews']
         
         review = {
             'Name': name,
@@ -484,7 +518,7 @@ def add_review(request, recipe_id):
         }
         
         # Find the recipe document by RecipeID
-        recipe = collection.find_one({'RecipeID': recipe_id})
+        recipe = reviews_collection.find_one({'RecipeID': recipe_id})
         
         if recipe is None:
             # If the recipe doesn't exist, create a new document
@@ -492,12 +526,11 @@ def add_review(request, recipe_id):
                 'RecipeID': recipe_id,
                 'Reviews': [review]
             }
-            collection.insert_one(recipe)
+            reviews_collection.insert_one(recipe)
         else:
             # If the recipe exists, append the new review to the existing array
-            collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
+            reviews_collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
         
         return redirect('recipe_details', recipe_id=recipe_id)
     
     return render(request, 'recipe_details.html')
-
