@@ -175,12 +175,12 @@
                 </div>
                 <div class="card-body">
                     {% if messages %}
-                        <ul class="messages">
-                            {% for message in messages %}
-                                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
                     <form method="POST" action="{% url 'add_review' recipe.RecipeID %}">
                         {% csrf_token %}
                         <div class="form-group">
@@ -294,6 +294,3 @@
 <script src="/static/assets/vendor/chart.js/dist/Chart.extension.js"></script>
 
 {% endblock javascripts %}
-
-
-
