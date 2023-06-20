@@ -11,7 +11,6 @@ from core import settings
 from django.db import connections
 from .decorators import post_request_only
 import re, html, json, math
-
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
 instructions_collection = mongo_conn['Instructions']
@@ -107,7 +106,9 @@ def view_recipe(request, id):
 
     # Function to check if a field is empty and return "Not Available"
     def check_field(value):
-        return value if value else "Not Available"
+        if value or value == 0:
+            return value
+        return "Not Available"
 
     # Retrieve data from MySQL
     with connections['default'].cursor() as cursor:
@@ -594,7 +595,6 @@ def get_suggested_ingredients(request):
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
 from django.db import connection
-from django.contrib import messages
 
 @login_required(login_url="/login/")  
 def add_review(request, recipe_id):
@@ -631,9 +631,11 @@ def add_review(request, recipe_id):
                 # If the recipe exists, append the new review to the existing array
                 reviews_collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
             
-            return redirect('recipe_details', recipe_id=recipe_id)
+            return redirect('view_recipe', recipe_id=recipe_id)
         else:
-            # User hasn't made the recipe, show an error message on the same page
-            messages.error(request, "You can only leave a review after making the recipe.")
+            # User hasn't made the recipe, redirect to an appropriate page or show an error message
+            return HttpResponse("You can only leave a review after making the recipe.")
     
-    return render(request, 'recipe_details.html')
+    return render(request, 'recipe/view_recipe.html')
+
+
