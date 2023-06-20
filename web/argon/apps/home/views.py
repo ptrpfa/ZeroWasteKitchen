@@ -11,6 +11,7 @@ from core import settings
 from django.db import connections
 from .decorators import post_request_only
 import re, html, json, math
+
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
 instructions_collection = mongo_conn['Instructions']
@@ -593,8 +594,6 @@ def get_suggested_ingredients(request):
     json_response = json.dumps(json_response)
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
-
-from django.db import connection
 
 @login_required(login_url="/login/")  
 def add_review(request, recipe_id):
