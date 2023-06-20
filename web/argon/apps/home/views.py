@@ -596,6 +596,8 @@ def get_suggested_ingredients(request):
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
+import pymongo
+
 @login_required(login_url="/login/")
 def add_review(request, recipe_id):
     if request.method == 'POST':
@@ -624,12 +626,22 @@ def add_review(request, recipe_id):
                 # If the recipe doesn't exist, create a new document
                 recipe = {
                     'RecipeID': recipe_id,
-                    'Reviews': [review]
+                    'Reviews': [review],
+                    'Overall_Rating': rating  # Set initial overall rating to the first review's rating
                 }
                 reviews_collection.insert_one(recipe)
             else:
                 # If the recipe exists, append the new review to the existing array
                 reviews_collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
+                
+                # Calculate new overall rating
+                recipe = reviews_collection.find_one({'RecipeID': recipe_id})
+                reviews = recipe['Reviews']
+                total_ratings = sum(int(review['Rating']) for review in reviews)
+                overall_rating = total_ratings / len(reviews)
+                
+                # Update the overall rating in the MongoDB document
+                reviews_collection.update_one({'RecipeID': recipe_id}, {'$set': {'Overall_Rating': overall_rating}})
             
             return redirect('view_recipe', recipe_id=recipe_id)
         else:
