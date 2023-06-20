@@ -593,34 +593,47 @@ def get_suggested_ingredients(request):
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
+from django.db import connection
+from django.contrib import messages
+
 @login_required(login_url="/login/")  
 def add_review(request, recipe_id):
     if request.method == 'POST':
-        name = request.POST['name']
+        name = request.user.username
         rating = request.POST['rating']
         text = request.POST['text']
         
-        review = {
-            'Name': name,
-            'Rating': rating,
-            'Text': text,
-            'UserID': request.user.id  # Assuming you have implemented authentication and the user is logged in
-        }
+        # Check if the user has made the recipe
+        user_id = request.user.id
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM userrecipe WHERE UserID = %s AND RecipeID = %s", [user_id, recipe_id])
+            recipe_exists = cursor.fetchone() is not None
         
-        # Find the recipe document by RecipeID
-        recipe = reviews_collection.find_one({'RecipeID': recipe_id})
-        
-        if recipe is None:
-            # If the recipe doesn't exist, create a new document
-            recipe = {
-                'RecipeID': recipe_id,
-                'Reviews': [review]
+        if recipe_exists:
+            review = {
+                'Name': name,
+                'Rating': rating,
+                'Text': text,
+                'UserID': user_id
             }
-            reviews_collection.insert_one(recipe)
+            
+            # Find the recipe document by RecipeID
+            recipe = reviews_collection.find_one({'RecipeID': recipe_id})
+            
+            if recipe is None:
+                # If the recipe doesn't exist, create a new document
+                recipe = {
+                    'RecipeID': recipe_id,
+                    'Reviews': [review]
+                }
+                reviews_collection.insert_one(recipe)
+            else:
+                # If the recipe exists, append the new review to the existing array
+                reviews_collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
+            
+            return redirect('view_recipe', recipe_id=recipe_id)
         else:
-            # If the recipe exists, append the new review to the existing array
-            reviews_collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
-        
-        return redirect('recipe_details', recipe_id=recipe_id)
+            # User hasn't made the recipe, show an error message on the same page
+            messages.error(request, "You can only leave a review after making the recipe.")
     
-    return render(request, 'recipe_details.html')
+    return render(request, 'view_recipe.html')
