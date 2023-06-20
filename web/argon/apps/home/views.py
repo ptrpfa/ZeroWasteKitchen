@@ -11,6 +11,7 @@ from core import settings
 from django.db import connections
 from .decorators import post_request_only
 import re, html, json, math
+from django.contrib import messages
 
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
@@ -595,7 +596,7 @@ def get_suggested_ingredients(request):
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
-@login_required(login_url="/login/")  
+@login_required(login_url="/login/")
 def add_review(request, recipe_id):
     if request.method == 'POST':
         name = request.user.username
@@ -632,9 +633,8 @@ def add_review(request, recipe_id):
             
             return redirect('view_recipe', recipe_id=recipe_id)
         else:
-            # User hasn't made the recipe, redirect to an appropriate page or show an error message
-            return HttpResponse("You can only leave a review after making the recipe.")
+            # User hasn't made the recipe, show an error message
+            messages.error(request, "Please click 'I Made This' before submitting a review.")
+            return redirect('view_recipe', recipe_id=recipe_id)
     
     return render(request, 'recipe/view_recipe.html')
-
-
