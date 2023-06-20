@@ -215,20 +215,6 @@
         </div>
 
     <div class="col-xl-4">
-      <div class="card">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <ul>
-                <form method="POST" action="{% url 'add_to_user_recipe' recipe.RecipeID %}">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-primary">I made this</button>
-                </form>                
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
         <div class="card">
           <div class="card-header bg-transparent">
             <div class="row align-items-center">
@@ -237,6 +223,12 @@
                 <ul>
                   <p>{{ recipe.Description }}</p>
                 </ul>
+                <ul>
+                    <form method="POST" action="{% url 'add_to_user_recipe' recipe.RecipeID %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary">I made this</button>
+                    </form>                
+                  </ul>
               </div>
             </div>
           </div>
