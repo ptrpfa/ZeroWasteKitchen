@@ -631,9 +631,9 @@ def add_review(request, recipe_id):
                 # If the recipe exists, append the new review to the existing array
                 reviews_collection.update_one({'RecipeID': recipe_id}, {'$push': {'Reviews': review}})
             
-            return redirect('view_recipe', recipe_id=recipe_id)
+            return redirect('recipe_details', recipe_id=recipe_id)
         else:
             # User hasn't made the recipe, show an error message on the same page
             messages.error(request, "You can only leave a review after making the recipe.")
     
-    return render(request, 'view_recipe.html')
+    return render(request, 'recipe_details.html')
