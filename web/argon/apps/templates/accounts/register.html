@@ -37,8 +37,8 @@
                                         </div>
                                         {{ form.username }}
                                     </div>
+                                    <span class="text-error">{{ form.username.errors }}</span>
                                 </div>
-                                <span class="text-error">{{ form.username.errors }}</span>
 
                                 <div class="form-group">
                                     <div class="input-group input-group-alternative mb-3">
@@ -47,8 +47,8 @@
                                         </div>
                                         {{ form.email }}
                                     </div>
+                                    <span class="text-error">{{ form.email.errors }}</span>
                                 </div>
-                                <span class="text-error">{{ form.email.errors }}</span>
 
                                 <div class="form-group">
                                     <div class="input-group input-group-alternative">
@@ -57,8 +57,8 @@
                                         </div>
                                         {{ form.password1 }}
                                     </div>
+                                    <span class="text-error">{{ form.password1.errors }}</span>
                                 </div>
-                                <span class="text-error">{{ form.password1.errors }}</span>
 
                                 <div class="form-group">
                                     <div class="input-group input-group-alternative">
@@ -67,8 +67,8 @@
                                         </div>
                                         {{ form.password2 }}
                                     </div>
+                                    <span class="text-error">{{ form.password2.errors }}</span>
                                 </div>
-                                <span class="text-error">{{ form.password2.errors }}</span>
 
                                 <div class="row my-4">
                                     <div class="col-12">
@@ -83,15 +83,21 @@
 
                                 <!-- Dietary restriction field -->
                                 <div class="form-group">
-                                    <div id="diet-restrictions-container">
-                                        <div class="input-group input-group-alternative mb-3">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text"><i class="ni ni-check-bold"></i></span>
-                                            </div>
-                                            <input type="text" name="diet_restriction" placeholder="Enter your dietary restrictions" class="form-control">
+                                    <div id="diet-restrictions-container" class="mb-3">
+                                        <!-- Pills container -->
+                                        {% for restriction in diet_restrictions %}
+                                            <span class="badge badge-primary mr-1">{{ restriction }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="ni ni-check-bold"></i></span>
+                                        </div>
+                                        <input type="text" id="diet-restriction-input" placeholder="Enter dietary restriction" class="form-control">
+                                        <div class="input-group-append">
+                                            <button type="button" id="add-diet-restriction-btn" class="btn btn-primary">Add</button>
                                         </div>
                                     </div>
-                                    <button type="button" id="add-diet-restriction-btn" class="btn btn-primary mt-2">Add</button>
                                 </div>
 
                                 <div class="text-center">
@@ -119,21 +125,28 @@
     <script>
         $(document).ready(function() {
             var maxDietRestrictions = 5; // Maximum number of diet restrictions
-            var dietRestrictionCount = 1; // Initial count of diet restrictions
+            var dietRestrictionCount = {{ diet_restrictions|length }}; // Initial count of diet restrictions
             
             $('#add-diet-restriction-btn').click(function() {
                 if (dietRestrictionCount < maxDietRestrictions) {
-                    var newField = $('<div class="input-group input-group-alternative mb-3">' +
-                        '<div class="input-group-prepend">' +
-                        '<span class="input-group-text"><i class="ni ni-check-bold"></i></span>' +
-                        '</div>' +
-                        '<input type="text" name="diet_restriction" placeholder="Enter your dietary restrictions" class="form-control">' +
-                        '</div>');
+                    var newRestriction = $('#diet-restriction-input').val().trim();
                     
-                    $('#diet-restrictions-container').append(newField);
-                    dietRestrictionCount++;
+                    if (newRestriction !== '') {
+                        var newPill = $('<span class="badge badge-primary mr-1">' + newRestriction + '</span>');
+                        $('#diet-restrictions-container').append(newPill);
+                        dietRestrictionCount++;
+                        
+                        // Clear the input field
+                        $('#diet-restriction-input').val('');
+                    }
                 }
             });
-        });
+            
+            // Allow clicking on a pill to remove it
+            $('#diet-restrictions-container').on('click', '.badge', function() {
+                $(this).remove();
+                dietRestrictionCount--;
+            });
+        });        
     </script>
 {% endblock javascripts %}

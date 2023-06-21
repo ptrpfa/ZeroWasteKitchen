@@ -110,7 +110,7 @@ def view_recipe(request, id):
     def check_field(value):
         if value or value == 0:
             return value
-        return "Not Available"
+        return "-"
 
     # Retrieve data from MySQL
     with connections['default'].cursor() as cursor:

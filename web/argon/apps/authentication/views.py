@@ -5,7 +5,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from .forms import LoginForm, SignUpForm
 from django.http import HttpResponse
-
+from django.shortcuts import render
+from django.db import connection
 
 def login_view(request):
     form = LoginForm(request.POST or None)
@@ -33,6 +34,14 @@ def register_user(request):
     msg = None
     success = False
 
+    # Execute raw SQL query to retrieve data from the dietrestriction table
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT Name FROM dietrestriction")
+        rows = cursor.fetchall()
+
+    # Extract the names from the rows and store them in a list
+    diet_restrictions = [row[0] for row in rows]
+
     if request.method == "POST":
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -51,4 +60,5 @@ def register_user(request):
     else:
         form = SignUpForm()
 
-    return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success})
+    return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success, "diet_restrictions": diet_restrictions})
+
