@@ -3,7 +3,98 @@
 {% block title %} Register {% endblock title %}
 
 <!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+<style>
+    .dropdown-menu.wider {
+        min-width: 400%;
+    }
+
+    .card {
+        border-radius: 10px;
+    }
+
+    .card-header {
+        border-bottom: none;
+    }
+
+    .card-body {
+        padding: 2.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .input-group-text {
+        background-color: transparent;
+        border-color: transparent;
+        color: #8898aa;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        color: #8898aa;
+        background-color: #fff;
+        border: 1px solid #e9eff7;
+        border-radius: 0.375rem;
+        height: 2.5rem;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.5;
+        box-shadow: none;
+    }
+
+    .dropdown-toggle {
+        border-radius: 0.375rem;
+        height: 2.5rem;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    .badge {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    #selected-diet-restrictions-container {
+        margin-top: 0.5rem;
+    }
+
+    #customCheckRegister {
+        margin-top: 0.25rem;
+    }
+
+    .btn-primary {
+        background-color: #5e72e4;
+        border-color: #5e72e4;
+    }
+
+    .btn-primary:hover {
+        background-color: #324cdd;
+        border-color: #324cdd;
+    }
+
+    .text-muted {
+        color: #8898aa;
+    }
+
+    .text-error {
+        color: #f5365c;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .text-light {
+        color: #f8f9fe;
+    }
+</style>
+{% endblock stylesheets %}
 
 {% block content %}
     <!-- Page content -->
@@ -14,7 +105,7 @@
                 <div class="card bg-secondary shadow border-0">
                     <div class="card-header bg-transparent pb-5">
                         <div class="text-muted text-center mt-2 mb-4">
-                            Sign Up
+                            <h2>Sign Up</h2>
                         </div>
                     </div>
                     <div class="card-body px-lg-5 py-lg-5">
@@ -22,7 +113,7 @@
                             {% if msg %}
                                 <small>{{ msg | safe }}</small>
                             {% else %}
-                                Add your credentials
+                                <h5>Add your credentials</h5>
                             {% endif %}
                         </div>
 
@@ -31,7 +122,7 @@
                                 {% csrf_token %}
 
                                 <div class="form-group">
-                                    <div class="input-group input-group-alternative mb-3">
+                                    <div class="input-group input-group-alternative">
                                         <div class="input-group-prepend">
                                             <span class="input-group-text"><i class="ni ni-hat-3"></i></span>
                                         </div>
@@ -41,7 +132,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <div class="input-group input-group-alternative mb-3">
+                                    <div class="input-group input-group-alternative">
                                         <div class="input-group-prepend">
                                             <span class="input-group-text"><i class="ni ni-email-83"></i></span>
                                         </div>
@@ -70,6 +161,29 @@
                                     <span class="text-error">{{ form.password2.errors }}</span>
                                 </div>
 
+                                <!-- Dietary restriction field -->
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="ni ni-check-bold"></i></span>
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-primary dropdown-toggle w-200" type="button" id="diet-restriction-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                Select dietary restrictions
+                                            </button>
+                                            <div class="dropdown-menu wider" aria-labelledby="diet-restriction-dropdown">
+                                                <div id="diet-restrictions-container">
+                                                    {% for restriction in diet_restrictions %}
+                                                        <span class="badge badge-primary diet-restriction-option mr-1">{{ restriction }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="diet-restrictions-input" name="diet_restrictions">
+                                    <div id="selected-diet-restrictions-container"></div>
+                                </div>
+
                                 <div class="row my-4">
                                     <div class="col-12">
                                         <div class="custom-control custom-control-alternative custom-checkbox">
@@ -77,25 +191,6 @@
                                             <label class="custom-control-label" for="customCheckRegister">
                                                 <span class="text-muted">I agree with the <a href="#!">Privacy Policy</a></span>
                                             </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Dietary restriction field -->
-                                <div class="form-group">
-                                    <div id="diet-restrictions-container" class="mb-3">
-                                        <!-- Pills container -->
-                                        {% for restriction in diet_restrictions %}
-                                            <span class="badge badge-primary mr-1">{{ restriction }}</span>
-                                        {% endfor %}
-                                    </div>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text"><i class="ni ni-check-bold"></i></span>
-                                        </div>
-                                        <input type="text" id="diet-restriction-input" placeholder="Enter dietary restriction" class="form-control">
-                                        <div class="input-group-append">
-                                            <button type="button" id="add-diet-restriction-btn" class="btn btn-primary">Add</button>
                                         </div>
                                     </div>
                                 </div>
@@ -125,28 +220,38 @@
     <script>
         $(document).ready(function() {
             var maxDietRestrictions = 5; // Maximum number of diet restrictions
-            var dietRestrictionCount = {{ diet_restrictions|length }}; // Initial count of diet restrictions
-            
-            $('#add-diet-restriction-btn').click(function() {
-                if (dietRestrictionCount < maxDietRestrictions) {
-                    var newRestriction = $('#diet-restriction-input').val().trim();
-                    
-                    if (newRestriction !== '') {
-                        var newPill = $('<span class="badge badge-primary mr-1">' + newRestriction + '</span>');
-                        $('#diet-restrictions-container').append(newPill);
-                        dietRestrictionCount++;
-                        
-                        // Clear the input field
-                        $('#diet-restriction-input').val('');
+            var selectedDietRestrictions = [];
+
+            $('.diet-restriction-option').click(function(e) {
+                e.preventDefault();
+                var restriction = $(this).text().trim();
+                if (selectedDietRestrictions.indexOf(restriction) === -1) {
+                    if (selectedDietRestrictions.length < maxDietRestrictions) {
+                        selectedDietRestrictions.push(restriction);
+                        var pill = $('<span class="badge badge-primary mr-1">' + restriction + '</span>');
+                        $('#selected-diet-restrictions-container').append(pill);
+                        updateDietRestrictionsInput();
+                    } else {
+                        alert('You can select a maximum of ' + maxDietRestrictions + ' restrictions.');
                     }
+                } else {
+                    alert('This restriction is already selected.');
                 }
             });
-            
-            // Allow clicking on a pill to remove it
-            $('#diet-restrictions-container').on('click', '.badge', function() {
-                $(this).remove();
-                dietRestrictionCount--;
+
+            $('#selected-diet-restrictions-container').on('click', '.badge', function() {
+                var restriction = $(this).text().trim();
+                var index = selectedDietRestrictions.indexOf(restriction);
+                if (index !== -1) {
+                    selectedDietRestrictions.splice(index, 1);
+                    $(this).remove();
+                    updateDietRestrictionsInput();
+                }
             });
-        });        
+
+            function updateDietRestrictionsInput() {
+                $('#diet-restrictions-input').val(selectedDietRestrictions.join(','));
+            }
+        });
     </script>
 {% endblock javascripts %}
