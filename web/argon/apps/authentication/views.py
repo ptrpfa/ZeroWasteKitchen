@@ -7,6 +7,10 @@ from .forms import LoginForm, SignUpForm
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.db import connection
+from .models import Userdietrestriction, Dietrestriction
+from django.shortcuts import get_object_or_404
+
+
 
 def login_view(request):
     form = LoginForm(request.POST or None)
@@ -30,30 +34,42 @@ def login_view(request):
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
 
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from .forms import LoginForm, SignUpForm
+from django.db import connection
+from .models import Userdietrestriction, Dietrestriction
+
 def register_user(request):
     msg = None
     success = False
 
-    # Execute raw SQL query to retrieve data from the dietrestriction table
     with connection.cursor() as cursor:
-        cursor.execute("SELECT Name FROM dietrestriction")
+        cursor.execute("SELECT name FROM dietrestriction")
         rows = cursor.fetchall()
 
-    # Extract the names from the rows and store them in a list
     diet_restrictions = [row[0] for row in rows]
 
     if request.method == "POST":
         form = SignUpForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()  # Save the user object
             username = form.cleaned_data.get("username")
             raw_password = form.cleaned_data.get("password1")
             user = authenticate(username=username, password=raw_password)
 
+            # Save the selected dietary restrictions for the user
+            selected_restrictions = request.POST.getlist("diet_restrictions")
+
+            for restrictions in selected_restrictions:
+                restriction_names = [name.strip() for name in restrictions.split(",")]
+
+                for restriction_name in restriction_names:
+                    restriction, created = Dietrestriction.objects.get_or_create(name=restriction_name)
+                    Userdietrestriction.objects.create(userid=user, restrictionid=restriction)
+
             msg = 'User created - please <a href="/login">login</a>.'
             success = True
-
-            # return redirect("/login/")
 
         else:
             msg = 'Form is not valid'
@@ -61,4 +77,3 @@ def register_user(request):
         form = SignUpForm()
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success, "diet_restrictions": diet_restrictions})
-
