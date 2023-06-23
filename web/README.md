@@ -12,7 +12,7 @@
 
 3. Download argon dependencies
     ```
-    pip3 install -r argon/requirements.txt
+    pip3 install -r requirements.txt
     python3 argon/manage.py makemigrations
     python3 argon/manage.py migrate
     ```

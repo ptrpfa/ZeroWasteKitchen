@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+import re, html, json, math
+from redis.commands.json.path import Path
+from hashlib import sha256
 from django.shortcuts import render, redirect
 from django import template
 from django.contrib.auth.decorators import login_required
@@ -10,7 +13,6 @@ from django.shortcuts import render
 from core import settings
 from django.db import connections
 from .decorators import post_request_only
-import re, html, json, math
 from django.contrib import messages
 
 # Initialise global MongoDB connections
@@ -18,6 +20,9 @@ mongo_client, mongo_conn = settings.get_mongodb()
 instructions_collection = mongo_conn['Instructions']
 reviews_collection = mongo_conn['Reviews']
 nutrition_collection = mongo_conn['Nutrition']
+
+# Initialise global Redis connection
+redis_client = settings.get_redis()
 
 def clean_input (input_value):     
     # Decode HTML encoded characters (&amp; -> &)
@@ -31,6 +36,11 @@ def clean_input (input_value):
 
     # Return cleaned input
     return input_value
+
+def get_hash(value, delimiter=''):
+    if(isinstance(value, list)):
+        value = delimiter.join(value)
+    return sha256(value.encode('utf-8')).hexdigest()
 
 @login_required(login_url="/login/")
 def index(request):
@@ -362,8 +372,9 @@ def process_search (request):
         base_sql
         query_sql
             strict_sql
-                normal_sql
-                diet_sql
+                inner_query
+                    normal_sql
+                    diet_sql
         offset_sql
 
     Count:
@@ -381,19 +392,21 @@ def process_search (request):
             JOIN recipeingredient strict_ri ON strict_r.RecipeID = strict_ri.RecipeID
             WHERE strict_r.RecipeID IN (
 
-                Normal search:
-                SELECT DISTINCT normal_r.RecipeID
-                FROM recipe normal_r
-                JOIN recipeingredient normal_ri ON normal_r.RecipeID = normal_ri.RecipeID
-                JOIN ingredient normal_i ON normal_i.IngredientID = normal_ri.IngredientID
-                WHERE normal_i.Name LIKE '%fish%' OR normal_i.Name LIKE '%chicken%'
+                Inner query:
+                    Normal search:
+                    SELECT DISTINCT normal_r.RecipeID
+                    FROM recipe normal_r
+                    JOIN recipeingredient normal_ri ON normal_r.RecipeID = normal_ri.RecipeID
+                    JOIN ingredient normal_i ON normal_i.IngredientID = normal_ri.IngredientID
+                    WHERE normal_i.Name LIKE '%fish%' OR normal_i.Name LIKE '%chicken%'
 
-                Diet restriction:
-                EXCEPT
-                SELECT DISTINCT diet_r.RecipeID
-                FROM recipe diet_r, recipedietrestriction diet_rdp
-                WHERE diet_r.RecipeID = diet_rdp.RecipeID 
-                AND diet_rdp.RestrictionID IN (%s, %s)
+                    Diet restriction:
+                    EXCEPT
+                    SELECT DISTINCT diet_r.RecipeID
+                    FROM recipe diet_r, recipedietrestriction diet_rdp
+                    WHERE diet_r.RecipeID = diet_rdp.RecipeID 
+                    AND diet_rdp.RestrictionID IN (%s, %s)
+
             )
             GROUP BY strict_r.RecipeID
             HAVING COUNT(strict_ri.MappingID) <= %s
@@ -407,12 +420,12 @@ def process_search (request):
     """
     
     # Get POST data
-    request_type = request.POST.get("type", "")                                 # Request type
-    list_search_terms = json.loads(request.POST.get("search", "[]"))            # Search terms
-    requested_page = int(request.POST.get("page", 0))                           # Requested page number
-    offset = (requested_page - 1) * 12                                          # Requested row offset
-    strict_mode = int(request.POST.get("strict_mode", 0))                       # Search mode (strict or normal)
-    list_restrictions = json.loads(request.POST.get("restrictions", "[]"))      # Dietary restrictions
+    request_type = request.POST.get("type", "")                                         # Request type
+    list_search_terms = sorted(json.loads(request.POST.get("search", "[]")))            # Search terms
+    requested_page = int(request.POST.get("page", 0))                                   # Requested page number
+    offset = (requested_page - 1) * 12                                                  # Requested row offset
+    strict_mode = int(request.POST.get("strict_mode", 0))                               # Search mode (strict or normal)
+    list_restrictions = sorted(json.loads(request.POST.get("restrictions", "[]")))      # Dietary restrictions
 
     # Initialise context variables
     recipe_count = None
@@ -428,6 +441,8 @@ def process_search (request):
     normal_sql = "SELECT DISTINCT normal_r.RecipeID FROM recipe normal_r JOIN recipeingredient normal_ri ON normal_r.RecipeID = normal_ri.RecipeID JOIN ingredient normal_i ON normal_i.IngredientID = normal_ri.IngredientID WHERE %s"
     diet_sql = "EXCEPT SELECT DISTINCT diet_r.RecipeID FROM recipe diet_r, recipedietrestriction diet_rdp WHERE diet_r.RecipeID = diet_rdp.RecipeID AND diet_rdp.RestrictionID IN (%s)"
     offset_sql = "ORDER BY base_r.RecipeID ASC LIMIT 12 OFFSET %s"
+    inner_query = ""
+    inner_query_results = []
 
     """ Parse query SQL """
     # Check for search terms
@@ -447,21 +462,52 @@ def process_search (request):
             # Parse diet SQL
             diet_sql = diet_sql % restrictions
 
+        # Prepare inner subquery
+        if(list_restrictions):
+            inner_query = normal_sql + " " + diet_sql
+        else:
+            inner_query = normal_sql
+
+        # Get generated hash key for inner query
+        inner_query_key = get_hash(list_search_terms + list_restrictions)
+
+        # Check if inner subquery results have been cached
+        inner_query_value = redis_client.json().get(inner_query_key)
+        if(not inner_query_value):
+            # Get results of inner query
+            with connection.cursor() as cursor:
+                # Get recipes
+                cursor.execute(inner_query)
+                rows = cursor.fetchall()
+                for row in rows:
+                    inner_query_results.append(row[0])
+
+            # Parse inner query into JSON for storage in Redis cache
+            inner_query_value = {   
+                                    'list_search_terms': list_search_terms,
+                                    'list_restrictions': list_restrictions,
+                                    'results': inner_query_results
+                                } 
+
+            # Cache inner query results
+            redis_client.json().set(inner_query_key, Path.root_path(), inner_query_value)
+        else:
+            inner_query_results = inner_query_value['results']
+            print("Cached results:", inner_query_results)
+
+        # Parse cached results
+        inner_query_results = [str(i) for i in inner_query_results]
+        cached = ', '.join(inner_query_results) if inner_query_results else '0' # 0 is a predefined RecipeID that guarantees no matches
+
         # Check strict mode
         if(strict_mode):
             # Parse strict SQL
-            if(list_restrictions):
-                strict_sql = strict_sql % (normal_sql + " " + diet_sql, str(len(list_search_terms)))
-            else:
-                strict_sql = strict_sql % (normal_sql, str(len(list_search_terms)))
+            strict_sql = strict_sql % (cached, str(len(list_search_terms)))
             # Parse query SQL
             query_sql = query_sql % strict_sql
         else:
             # Parse query SQL
-            if(list_restrictions):
-                query_sql = query_sql % (normal_sql + " " + diet_sql)
-            else:
-                query_sql = query_sql % (normal_sql)
+            query_sql = query_sql % (cached)
     else:
         # Initialise query
         query_sql = ""
@@ -564,6 +610,7 @@ def process_search (request):
     print("Page offset:", offset)
     print("Search terms:", list_search_terms)
     print("Dietary Restrictions:", list_restrictions)
+    print("Inner Query:", inner_query)
     print("Search SQL:", sql)
     print("Count SQL:", count_sql)
     # print("Response:", json_response)
@@ -595,8 +642,6 @@ def get_suggested_ingredients(request):
     json_response = json.dumps(json_response)
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
-
-import pymongo
 
 @login_required(login_url="/login/")
 def add_review(request, recipe_id):
