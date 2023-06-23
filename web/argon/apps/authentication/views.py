@@ -9,6 +9,15 @@ from django.shortcuts import render
 from django.db import connection
 from .models import Userdietrestriction, Dietrestriction
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+
+
+from core import settings
+
+
+# Initialise global MongoDB connections
+mongo_client, mongo_conn = settings.get_mongodb()
+reviews_collection = mongo_conn['Reviews']
 
 
 
@@ -33,12 +42,6 @@ def login_view(request):
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
-
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
-from .forms import LoginForm, SignUpForm
-from django.db import connection
-from .models import Userdietrestriction, Dietrestriction
 
 def register_user(request):
     msg = None
@@ -77,3 +80,57 @@ def register_user(request):
         form = SignUpForm()
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success, "diet_restrictions": diet_restrictions})
+
+
+@login_required
+def update_profile(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        email = request.POST.get("email")
+
+        # Update the user's information
+        user = request.user
+        user.username = username
+        user.email = email
+        user.save()
+
+        # Redirect to the profile page or any other desired location
+        return redirect("/profile.html")
+
+    return render(request, "home/profile.html")
+
+
+
+@login_required
+def view_review(request):
+    # Get the user's ID
+    user_id = request.user.id
+
+    # Execute a raw SQL query to retrieve reviews by UserID
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM Reviews WHERE UserID = %s", [user_id])
+        reviews_data = cursor.fetchall()
+
+    # Process the retrieved reviews into a list
+    reviews = []
+    for review_data in reviews_data:
+        review = {
+            'ReviewID': review_data[0],
+            'Name': review_data[1],
+            'Rating': review_data[2],
+            'Text': review_data[3],
+            'UserID': review_data[4]
+        }
+        reviews.append(review)
+
+    # Pass the reviews to the template context
+    context = {
+        'reviews': reviews
+    }
+
+    return render(request, 'home/profile.html', context)
+
+
+
+
+
