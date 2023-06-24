@@ -81,54 +81,103 @@ def register_user(request):
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success, "diet_restrictions": diet_restrictions})
 
-
 @login_required
 def update_profile(request):
     if request.method == "POST":
         username = request.POST.get("username")
         email = request.POST.get("email")
 
-        # Update the user's information
-        user = request.user
-        user.username = username
-        user.email = email
-        user.save()
+        # Update the user's information using raw SQL query
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE auth_user SET username = %s, email = %s WHERE id = %s", [username, email, request.user.id])
 
         # Redirect to the profile page or any other desired location
         return redirect("/profile.html")
 
     return render(request, "home/profile.html")
 
-
-
 @login_required
 def view_review(request):
     # Get the user's ID
     user_id = request.user.id
-
-    # Execute a raw SQL query to retrieve reviews by UserID
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM Reviews WHERE UserID = %s", [user_id])
-        reviews_data = cursor.fetchall()
-
+    # Query the 'Reviews' collection for reviews by UserID within the 'Reviews' array
+    reviews_data = reviews_collection.find({'Reviews.UserID': user_id})
     # Process the retrieved reviews into a list
     reviews = []
     for review_data in reviews_data:
-        review = {
-            'ReviewID': review_data[0],
-            'Name': review_data[1],
-            'Rating': review_data[2],
-            'Text': review_data[3],
-            'UserID': review_data[4]
-        }
-        reviews.append(review)
+        for review in review_data['Reviews']:
+            if review['UserID'] == user_id:
+                review_item = {
+                    'ReviewID': review['ReviewID'],
+                    'Name': review['Name'],
+                    'Rating': review['Rating'],
+                    'Text': review['Text'],
+                    'UserID': review['UserID'],
+                    'RecipeID': review_data['RecipeID']
+                }
+                reviews.append(review_item)
 
     # Pass the reviews to the template context
     context = {
         'reviews': reviews
     }
 
-    return render(request, 'home/profile.html', context)
+    return render(request, "home/profile.html", context)
+
+# tried to use raw but dont work.... dk why will firgure out
+# @login_required(login_url="/login/")
+# def update_review(request, review_id):
+#     if request.method == 'POST':
+#         rating = request.POST['rating']
+#         text = request.POST['text']
+#         query = "UPDATE Reviews SET Rating = %s, Text = %s WHERE ReviewID = %s"
+#         reviews_collection.execute(query, (rating, text, review_id))
+        
+#     return redirect('/profile.html')  # Redirect to the profile page
+        
+    
+
+# @login_required(login_url="/login/")
+# def delete_review(request, review_id):
+#     if request.method == 'GET':
+       
+#         query = "DELETE FROM Reviews WHERE ReviewID = %s"
+#         reviews_collection.execute(query, (review_id,))
+        
+#     return redirect('/profile.html')  # Redirect to the profile page
+
+@login_required(login_url="/login/")
+def update_review(request, review_id):
+    if request.method == 'POST':
+        rating = request.POST['rating']
+        text = request.POST['text']
+        
+        # Update the review in the MongoDB collection
+        reviews_collection.update_one(
+            {'Reviews.ReviewID': review_id},
+            {'$set': {'Reviews.$.Rating': rating, 'Reviews.$.Text': text}}
+        )
+        
+        return redirect('/profile.html')  # Redirect to the profile page
+        
+    return redirect('home')  # Handle non-POST requests by redirecting to home page
+
+
+@login_required(login_url="/login/")
+def delete_review(request, review_id):
+    if request.method == 'GET':
+        # Delete the review from the MongoDB collection
+        reviews_collection.update_one(
+            {'Reviews.ReviewID': review_id},
+            {'$pull': {'Reviews': {'ReviewID': review_id}}}
+        )
+        
+        return redirect('/profile.html')  # Redirect to the profile page
+        
+    return redirect('home')  # Handle non-GET requests by redirecting to home page
+        
+ 
+
 
 
 

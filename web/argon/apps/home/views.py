@@ -14,6 +14,10 @@ from core import settings
 from django.db import connections
 from .decorators import post_request_only
 from django.contrib import messages
+from pymongo import MongoClient
+from pymongo.cursor import CursorType
+
+
 
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
@@ -658,6 +662,7 @@ def add_review(request, recipe_id):
         
         if recipe_exists:
             review = {
+                'ReviewID': generate_review_id(recipe_id),
                 'Name': name,
                 'Rating': rating,
                 'Text': text,
@@ -695,3 +700,17 @@ def add_review(request, recipe_id):
             return redirect('view_recipe', recipe_id=recipe_id)
     
     return render(request, 'recipe/view_recipe.html')
+
+def generate_review_id(recipe_id):
+    recipe = reviews_collection.find_one({'RecipeID': recipe_id})
+    if recipe:
+        reviews = recipe['Reviews']
+        if reviews:
+            last_review = max(reviews, key=lambda review: review.get('ReviewID', 0))
+            last_review_id = last_review.get('ReviewID', 0)
+            new_review_id_num = int(last_review_id) + 1
+        else:
+            recipe_id_prefix = str(recipe_id)[:5]
+            new_review_id_num = int(f"{recipe_id_prefix}000") + 1
+
+    return new_review_id_num

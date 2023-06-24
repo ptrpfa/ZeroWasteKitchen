@@ -4,15 +4,14 @@
 
 {% block content %}
 
-<div class="header pb-6 d-flex align-items-center" 
-     style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
+<div class="header pb-6 d-flex align-items-center" style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
   <!-- Mask -->
   <span class="mask bg-gradient-default opacity-8"></span>
   <!-- Header container -->
   <div class="container-fluid d-flex align-items-center">
     <div class="row">
       <div class="col-lg-7 col-md-10">
-        <h1 class="display-2 text-white"> 
+        <h1 class="display-2 text-white">
           Hello {{ request.user.username }}
         </h1>
         <p class="text-white mt-0 mb-5">This is your profile page. You can see the progress you've made with your work and manage your projects or assigned tasks</p>
@@ -24,13 +23,12 @@
 <!-- Page content -->
 <div class="container-fluid mt--6">
   <div class="row">
-  </div>
     <div class="col-xl-8 order-xl-1">
       <div class="card">
         <div class="card-header">
           <div class="row align-items-center">
             <div class="col-8">
-              <h3 class="mb-0">Edit profile </h3>
+              <h3 class="mb-0">Edit profile</h3>
             </div>
           </div>
         </div>
@@ -39,33 +37,17 @@
             {% csrf_token %}
             <h6 class="heading-small text-muted mb-4">User information</h6>
             <div class="pl-lg-4">
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="form-group">
-                            <label class="form-control-label" for="input-username">Username</label>
-                            <input type="text" id="input-username" name="username" class="form-control" placeholder="Username" value="{{ request.user.username }}">
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="form-group">
-                            <label class="form-control-label" for="input-email">Email address</label>
-                            <input type="email" id="input-email" name="email" class="form-control" placeholder="{{ request.user.email }}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="text-right">
-                <button type="submit" class="btn btn-primary my-4">Save changes</button>
-            </div>
-        </form>
-            <!-- Dietary Restrictions -->
-            <h6 class="heading-small text-muted mb-4">Dietary Restrictions</h6>
-            <div class="pl-lg-4">
               <div class="row">
-                <div class="col-md-12">
+                <div class="col-lg-6">
                   <div class="form-group">
-                    <label class="form-control-label" for="input-address">Address</label>
-                    <input id="input-address" class="form-control" placeholder="Home Address" value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09" type="text">
+                    <label class="form-control-label" for="input-username">Username</label>
+                    <input type="text" id="input-username" name="username" class="form-control" placeholder="Username" value="{{ request.user.username }}">
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-email">Email address</label>
+                    <input type="email" id="input-email" name="email" class="form-control" placeholder="{{ request.user.email }}">
                   </div>
                 </div>
               </div>
@@ -73,14 +55,68 @@
             <div class="text-right">
               <button type="submit" class="btn btn-primary my-4">Save changes</button>
             </div>
-            <hr class="my-4" />
-            <!-- Your Reviews -->
-            <h6 class="heading-small text-muted mb-4">Your Reviews</h6>
-            <div class="pl-lg-4">
-              <div class="text-right">
-                <button type="submit" class="btn btn-primary my-4">Save changes</button>
+          </form>
+          <!-- Dietary Restrictions -->
+          <h6 class="heading-small text-muted mb-4">Dietary Restrictions</h6>
+          <div class="pl-lg-4">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label class="form-control-label" for="input-address">Address</label>
+                  <input id="input-address" class="form-control" placeholder="Home Address" value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09" type="text">
+                </div>
               </div>
             </div>
+          </div>
+          <div class="text-right">
+            <button type="submit" class="btn btn-primary my-4">Save changes</button>
+          </div>
+          <hr class="my-4" />
+
+          <!-- Your Reviews -->
+          <h6 class="heading-small text-muted mb-4">Your Reviews</h6>
+          <div class="pl-lg-4">
+            {% if reviews %}
+            {% for review in reviews %}
+            <div class="card mb-3">
+              <div class="card-body">
+                <form method="post" action="{% url 'update_review' review.ReviewID %}">
+                  {% csrf_token %}
+                  <div class="form-group">
+                    <label for="name">RecipeID</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="{{ review.RecipeID }}" readonly>
+                    <label for="name">ReviewID</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="{{ review.ReviewID }}" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label for="rating">Rating</label>
+                    <select class="form-control" id="rating" name="rating" required>
+                      <option value="" disabled selected>{{review.Rating}}</option>
+                      <option value="1" {% if review.Rating == 1 %}selected{% endif %}>1</option>
+                      <option value="2" {% if review.Rating == 2 %}selected{% endif %}>2</option>
+                      <option value="3" {% if review.Rating == 3 %}selected{% endif %}>3</option>
+                      <option value="4" {% if review.Rating == 4 %}selected{% endif %}>4</option>
+                      <option value="5" {% if review.Rating == 5 %}selected{% endif %}>5</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="text">Review</label>
+                    <textarea class="form-control" id="text" name="text" rows="3" required>{{ review.Text }}</textarea>
+                  </div>
+                  <div class="text-right">
+                    <button class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'delete_review' review.ReviewID %}" class="btn btn-danger">Delete</a>
+                  </div>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No reviews found.</p>
+            {% endif %}
+          </div>
+
+
         </div>
       </div>
     </div>
@@ -92,5 +128,5 @@
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
+<!-- Specific JS goes HERE -->
 {% block javascripts %}{% endblock javascripts %}
