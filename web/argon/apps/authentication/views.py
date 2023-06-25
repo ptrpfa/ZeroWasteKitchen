@@ -7,10 +7,9 @@ from .forms import LoginForm, SignUpForm
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.db import connection
-from .models import Userdietrestriction, Dietrestriction
+from .models import Userdietrestriction, Dietrestriction,User
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
-
 
 from core import settings
 
@@ -109,43 +108,56 @@ def view_profile(request):
     for review_data in reviews_data:
         for review in review_data['Reviews']:
             if review['UserID'] == user_id:
+                recipe_id = review_data['RecipeID']
+                
+                # Retrieve the Recipe.Name from the recipe table based on RecipeID
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT Name FROM recipe WHERE RecipeID = %s", [recipe_id])
+                    recipe_data = cursor.fetchone()
+                
                 review_item = {
                     'ReviewID': review['ReviewID'],
                     'Name': review['Name'],
                     'Rating': review['Rating'],
                     'Text': review['Text'],
                     'UserID': review['UserID'],
-                    'RecipeID': review_data['RecipeID']
+                    'RecipeID': recipe_id,
+                    'RecipeName': recipe_data[0] if recipe_data else None
                 }
                 reviews.append(review_item)
+    
+    # Execute a raw SQL query to retrieve all dietary restrictions
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT Name FROM dietrestriction")
+        diet_restrictions_data = cursor.fetchall()
+    
+    # Process the retrieved dietary restrictions into a list
+    diet_restrictions = [restriction_data[0] for restriction_data in diet_restrictions_data]
     
     # Execute a raw SQL query to retrieve the user's dietary restrictions with their names
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT dr.RestrictionID, dr.Name "
+            "SELECT dr.Name "
             "FROM dietrestriction AS dr "
             "INNER JOIN userdietrestriction AS udr ON dr.RestrictionID = udr.RestrictionID "
             "WHERE udr.UserID = %s",
             [user_id]
         )
-        restrictions_data = cursor.fetchall()
+        user_restrictions_data = cursor.fetchall()
+    
+    # Process the retrieved user's dietary restrictions into a list
+    user_restrictions = [restriction_data[0] for restriction_data in user_restrictions_data]
 
-    # Process the retrieved restrictions into a list of dictionaries
-    restrictions = []
-    for restriction_data in restrictions_data:
-        restriction = {
-            'RestrictionID': restriction_data[0],
-            'Name': restriction_data[1],
-        }
-        restrictions.append(restriction)
-
-    # Pass the reviews and restrictions to the template context
+    # Pass the reviews, diet restrictions, and user restrictions to the template context
     context = {
         'reviews': reviews,
-        'restrictions': restrictions
+        'diet_restrictions': diet_restrictions,
+        'user_restrictions': user_restrictions,
+        'selected_diet_restrictions': user_restrictions  # Add this line to pass the selected diet restrictions
     }
 
     return render(request, 'home/profile.html', context)
+
 
 # tried to use raw but dont work.... dk why will firgure out
 # @login_required(login_url="/login/")
@@ -197,4 +209,25 @@ def delete_review(request, review_id):
         return redirect('/profile.html')  # Redirect to the profile page
         
     return redirect('home')  # Handle non-GET requests by redirecting to home page
+
+def update_restriction(request):
+    user_id = request.user.id
+
+    if request.method == 'POST':
+        # Save the selected dietary restrictions for the user
+        selected_restrictions = request.POST.getlist("diet_restrictions")
+
+        for restrictions in selected_restrictions:
+            restriction_names = [name.strip() for name in restrictions.split(",")]
+
+            for restriction_name in restriction_names:
+                restriction, created = Dietrestriction.objects.get_or_create(name=restriction_name)
+                user = User.objects.get(id=user_id)  # Retrieve the User instance
+                Userdietrestriction.objects.create(userid=user, restrictionid=restriction)
+
+        # Redirect the user to the profile page or any other appropriate page
+        return redirect('/profile.html')
+
+  
+
         

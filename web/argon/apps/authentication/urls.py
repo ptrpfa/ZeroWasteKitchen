@@ -14,6 +14,8 @@ urlpatterns = [
     path('update_review/<int:review_id>/', views.update_review, name='update_review'),
     path('delete_review/<int:review_id>/', views.delete_review, name='delete_review'),
     path('profile.html', views.view_profile, name='view_profile'),
+    path('update_restriction/', views.update_restriction, name='update_restriction')
+
 
 
 
