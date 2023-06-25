@@ -224,19 +224,13 @@ def update_restriction(request):
 
                 for restriction_name in restriction_names:
                     cursor.execute(
-                        "INSERT INTO dietrestriction (name) "
-                        "VALUES (%s) "
-                        "ON DUPLICATE KEY UPDATE name = name",
-                        [restriction_name]
-                    )
-                    restriction_id = cursor.lastrowid
-                    cursor.execute(
                         "INSERT INTO userdietrestriction (userid, restrictionid) "
-                        "VALUES (%s, %s)",
-                        [user_id, restriction_id]
+                        "SELECT %s, restrictionid FROM dietrestriction "
+                        "WHERE name = %s",
+                        [user_id, restriction_name]
                     )
 
-        # Redirect the user to the profile page
+        # Redirect the user to the profile page or any other appropriate page
         return redirect('/profile.html')
 
 
