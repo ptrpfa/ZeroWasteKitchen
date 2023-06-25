@@ -210,6 +210,7 @@ def delete_review(request, review_id):
         
     return redirect('home')  # Handle non-GET requests by redirecting to home page
 
+
 def update_restriction(request):
     user_id = request.user.id
 
@@ -217,16 +218,27 @@ def update_restriction(request):
         # Save the selected dietary restrictions for the user
         selected_restrictions = request.POST.getlist("diet_restrictions")
 
-        for restrictions in selected_restrictions:
-            restriction_names = [name.strip() for name in restrictions.split(",")]
+        with connection.cursor() as cursor:
+            for restrictions in selected_restrictions:
+                restriction_names = [name.strip() for name in restrictions.split(",")]
 
-            for restriction_name in restriction_names:
-                restriction, created = Dietrestriction.objects.get_or_create(name=restriction_name)
-                user = User.objects.get(id=user_id)  # Retrieve the User instance
-                Userdietrestriction.objects.create(userid=user, restrictionid=restriction)
+                for restriction_name in restriction_names:
+                    cursor.execute(
+                        "INSERT INTO dietrestriction (name) "
+                        "VALUES (%s) "
+                        "ON DUPLICATE KEY UPDATE name = name",
+                        [restriction_name]
+                    )
+                    restriction_id = cursor.lastrowid
+                    cursor.execute(
+                        "INSERT INTO userdietrestriction (userid, restrictionid) "
+                        "VALUES (%s, %s)",
+                        [user_id, restriction_id]
+                    )
 
-        # Redirect the user to the profile page or any other appropriate page
+        # Redirect the user to the profile page
         return redirect('/profile.html')
+
 
   
 
