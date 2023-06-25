@@ -97,11 +97,13 @@ def update_profile(request):
     return render(request, "home/profile.html")
 
 @login_required
-def view_review(request):
+def view_profile(request):
     # Get the user's ID
     user_id = request.user.id
+    
     # Query the 'Reviews' collection for reviews by UserID within the 'Reviews' array
     reviews_data = reviews_collection.find({'Reviews.UserID': user_id})
+    
     # Process the retrieved reviews into a list
     reviews = []
     for review_data in reviews_data:
@@ -116,13 +118,34 @@ def view_review(request):
                     'RecipeID': review_data['RecipeID']
                 }
                 reviews.append(review_item)
+    
+    # Execute a raw SQL query to retrieve the user's dietary restrictions with their names
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT dr.RestrictionID, dr.Name "
+            "FROM dietrestriction AS dr "
+            "INNER JOIN userdietrestriction AS udr ON dr.RestrictionID = udr.RestrictionID "
+            "WHERE udr.UserID = %s",
+            [user_id]
+        )
+        restrictions_data = cursor.fetchall()
 
-    # Pass the reviews to the template context
+    # Process the retrieved restrictions into a list of dictionaries
+    restrictions = []
+    for restriction_data in restrictions_data:
+        restriction = {
+            'RestrictionID': restriction_data[0],
+            'Name': restriction_data[1],
+        }
+        restrictions.append(restriction)
+
+    # Pass the reviews and restrictions to the template context
     context = {
-        'reviews': reviews
+        'reviews': reviews,
+        'restrictions': restrictions
     }
 
-    return render(request, "home/profile.html", context)
+    return render(request, 'home/profile.html', context)
 
 # tried to use raw but dont work.... dk why will firgure out
 # @login_required(login_url="/login/")
@@ -162,7 +185,6 @@ def update_review(request, review_id):
         
     return redirect('home')  # Handle non-POST requests by redirecting to home page
 
-
 @login_required(login_url="/login/")
 def delete_review(request, review_id):
     if request.method == 'GET':
@@ -176,10 +198,3 @@ def delete_review(request, review_id):
         
     return redirect('home')  # Handle non-GET requests by redirecting to home page
         
- 
-
-
-
-
-
-
