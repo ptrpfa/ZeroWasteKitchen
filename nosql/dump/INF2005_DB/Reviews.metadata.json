@@ -1,1 +1,1 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"8c27ed946a38430faea5040d2ac18501","collectionName":"Reviews","type":"collection"}
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"RecipeID":{"$numberInt":"1"}},"name":"RecipeID_1"}],"uuid":"96a287c025f44ff48c34bd6f4a3ba170","collectionName":"Reviews","type":"collection"}
