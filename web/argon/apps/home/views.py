@@ -163,7 +163,11 @@ def add_to_user_recipe(request, recipe_id):
         user_id = request.user.id
         with connection.cursor() as cursor:
             cursor.execute("INSERT INTO userrecipe (UserID, RecipeID) VALUES (%s, %s)", [user_id, recipe_id])
-        return redirect('recipe', recipe_id=recipe_id)
+            response_data = {
+                'success': True
+            }
+            json_response = json.dumps(response_data)
+        return HttpResponse(json_response, content_type='application/json;charset=utf-8')
     else:
         return redirect('home')
 
@@ -651,7 +655,7 @@ def get_suggested_ingredients(request):
 def add_review(request, recipe_id):
     if request.method == 'POST':
         name = request.user.username
-        rating = request.POST['rating']
+        rating = int(request.POST['rating'])
         text = request.POST['text']
         
         # Check if the user has made the recipe
@@ -709,8 +713,9 @@ def generate_review_id(recipe_id):
             last_review = max(reviews, key=lambda review: review.get('ReviewID', 0))
             last_review_id = last_review.get('ReviewID', 0)
             new_review_id_num = int(last_review_id) + 1
-        else:
-            recipe_id_prefix = str(recipe_id)[:5]
-            new_review_id_num = int(f"{recipe_id_prefix}000") + 1
+            return new_review_id_num
+
+    recipe_id_prefix = str(recipe_id)[:5]
+    new_review_id_num = int(f"{recipe_id_prefix}000") + 1
 
     return new_review_id_num

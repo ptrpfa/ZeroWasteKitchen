@@ -200,31 +200,26 @@ def update_review(request, review_id):
 @login_required(login_url="/login/")
 def delete_review(request, review_id):
     if request.method == 'GET':
-        # Delete the review from the MongoDB collection
-        reviews_collection.update_one(
-            {'Reviews.ReviewID': review_id},
-            {'$pull': {'Reviews': {'ReviewID': review_id}}}
-        )
-
         # Get document based on review_id
         document = reviews_collection.find_one(
             {"Reviews": {"$elemMatch": {"ReviewID": review_id}}})
-
-        review_length = len(document['Reviews'])
         
-        # Remove document if there is no more reviews in document
-        if review_length == 0:
+        review_length = len(document['Reviews'])
+
+        # Remove document if this is the only review in document
+        if review_length == 1:
             reviews_collection.delete_one({"RecipeID": document['RecipeID']})
 
-        # Update overall ratings
+        # Update overall ratings and delete the review from the MongoDB collection
         else:
             rating_sum = 0
             for review in document['Reviews']:
-                rating_sum += review['Rating']
-            rating_average = rating_sum / review_length
+                if review['ReviewID'] != review_id:
+                    rating_sum += review['Rating']
+            rating_average = rating_sum / (review_length - 1)
             reviews_collection.update_one(
                 {"RecipeID": document['RecipeID']},
-                {"$set": {'Overall_Rating': rating_average}}
+                {"$set": {'Overall_Rating': rating_average}, '$pull': {'Reviews': {'ReviewID': review_id}}}
             )
         return redirect('/profile.html')  # Redirect to the profile page
         

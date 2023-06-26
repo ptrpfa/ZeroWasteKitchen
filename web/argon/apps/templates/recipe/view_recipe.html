@@ -237,11 +237,8 @@
                   <p>{{ recipe.Description }}</p>
                 </ul>
                 <ul>
-                    <form method="POST" action="{% url 'add_to_user_recipe' recipe.RecipeID %}">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-primary">I made this</button>
-                    </form>                
-                  </ul>
+                  <button type="button" class="btn btn-primary" onclick="add_user_recipe()">I Made This!</button>
+                </ul>
               </div>
             </div>
           </div>
@@ -295,7 +292,32 @@
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
 
-<script src="/static/assets/vendor/chart.js/dist/Chart.min.js"></script>
-<script src="/static/assets/vendor/chart.js/dist/Chart.extension.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+<script>
+
+    function add_user_recipe() {
+      // AJAX call so confetti wont be interrupted
+      $.ajax({
+        url: "{% url 'add_to_user_recipe' recipe.RecipeID%}",
+        type: "POST",
+        data: {
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        dataType: 'json',
+        success: function (data) {
+          // Throw some confetti
+          confetti({
+            particleCount: 500,
+            spread: 180,
+          });
+        },
+        error: function () {
+          // For debugging
+          console.log("Error updating database!");
+        },
+      });
+    }
+  </script>
 {% endblock javascripts %}
