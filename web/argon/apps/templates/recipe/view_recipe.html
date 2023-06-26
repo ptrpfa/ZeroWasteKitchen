@@ -8,6 +8,10 @@
     .custom-gradient {
         background: linear-gradient(135deg, #FF7F50 0%, #FF4E50 100%);
     }
+    .fa-star{
+        color:orange;
+    }
+
 </style>
 {% endblock stylesheets %}
 
@@ -94,7 +98,11 @@
                             <div class="row">
                                 <div class="col">
                                     <h5 class="card-title text-uppercase text-muted mb-0">Overall Ratings</h5>
-                                    <span class="h2 font-weight-bold mb-0">{{ recipe.Overall_Rating|floatformat:2 }}/5</span>
+                                    {% if recipe.Overall_Rating is not None %}
+                                        <span class="h2 font-weight-bold mb-0">{{ recipe.Overall_Rating|floatformat:2 }}/5</span>
+                                    {% else %}
+                                        <span class="h2 font-weight-bold mb-0">No ratings yet!</span>
+                                    {% endif %}
                                 </div>
                                 <div class="col-auto">
                                     <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
@@ -153,7 +161,12 @@
                     {% for review in recipe.Reviews %}
                     <div class="review">
                         <p><strong>Name:</strong> {{ review.Name }}</p>
-                        <p><strong>Rating:</strong> {{ review.Rating }}</p>
+                        <p><strong>Rating:</strong> 
+                            <span class="{% if review.Rating >= 1 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+                            <span class="{% if review.Rating >= 2 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+                            <span class="{% if review.Rating >= 3 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+                            <span class="{% if review.Rating >= 4 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+                            <span class="{% if review.Rating == 5 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
                         <p>{{ review.Text }}</p>
                     </div>
                     {% if not loop.last %}

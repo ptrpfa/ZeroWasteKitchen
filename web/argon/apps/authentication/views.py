@@ -205,7 +205,27 @@ def delete_review(request, review_id):
             {'Reviews.ReviewID': review_id},
             {'$pull': {'Reviews': {'ReviewID': review_id}}}
         )
+
+        # Get document based on review_id
+        document = reviews_collection.find_one(
+            {"Reviews": {"$elemMatch": {"ReviewID": review_id}}})
+
+        review_length = len(document['Reviews'])
         
+        # Remove document if there is no more reviews in document
+        if review_length == 0:
+            reviews_collection.delete_one({"RecipeID": document['RecipeID']})
+
+        # Update overall ratings
+        else:
+            rating_sum = 0
+            for review in document['Reviews']:
+                rating_sum += review['Rating']
+            rating_average = rating_sum / review_length
+            reviews_collection.update_one(
+                {"RecipeID": document['RecipeID']},
+                {"$set": {'Overall_Rating': rating_average}}
+            )
         return redirect('/profile.html')  # Redirect to the profile page
         
     return redirect('home')  # Handle non-GET requests by redirecting to home page
@@ -217,18 +237,15 @@ def update_restriction(request):
     if request.method == 'POST':
         # Save the selected dietary restrictions for the user
         selected_restrictions = request.POST.getlist("diet_restrictions")
-
+        restriction_names = selected_restrictions[0].split(",")
         with connection.cursor() as cursor:
-            for restrictions in selected_restrictions:
-                restriction_names = [name.strip() for name in restrictions.split(",")]
-
-                for restriction_name in restriction_names:
-                    cursor.execute(
-                        "INSERT INTO userdietrestriction (userid, restrictionid) "
-                        "SELECT %s, restrictionid FROM dietrestriction "
-                        "WHERE name = %s",
-                        [user_id, restriction_name]
-                    )
+            for restriction_name in restriction_names:
+                cursor.execute(
+                    "INSERT INTO userdietrestriction (userid, restrictionid) "
+                    "SELECT %s, restrictionid FROM dietrestriction "
+                    "WHERE name = %s",
+                    [user_id, restriction_name]
+                )
 
         # Redirect the user to the profile page or any other appropriate page
         return redirect('/profile.html')

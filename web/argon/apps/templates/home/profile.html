@@ -2,6 +2,15 @@
 
 {% block title %} Profile {% endblock title %}
 
+{% block stylesheets %}
+<style>
+    .badge:hover {
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 0 rgba(247, 250, 252, 0.5);
+    }
+</style>
+{% endblock stylesheets %}
+
 {% block content %}
 
 <div class="header pb-6 d-flex align-items-center" style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
@@ -12,7 +21,7 @@
     <div class="row">
       <div class="col-lg-7 col-md-10">
         <h1 class="display-2 text-white">
-          Hello! {{ request.user.username }}
+          Hello {{ request.user.username }} !
         </h1>
         <p class="text-white mt-0 mb-5">This is your profile page. You can see the progress you've made with your work and manage your projects or assigned tasks</p>
       </div>
