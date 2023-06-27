@@ -212,14 +212,27 @@ def delete_review(request, review_id):
 
         # Update overall ratings and delete the review from the MongoDB collection
         else:
-            rating_sum = 0
-            for review in document['Reviews']:
-                if review['ReviewID'] != review_id:
-                    rating_sum += review['Rating']
-            rating_average = rating_sum / (review_length - 1)
             reviews_collection.update_one(
                 {"RecipeID": document['RecipeID']},
-                {"$set": {'Overall_Rating': rating_average}, '$pull': {'Reviews': {'ReviewID': review_id}}}
+                  {'$pull': 
+                    {'Reviews': 
+                      {'ReviewID': review_id}
+                    }
+                  }
+            )
+            
+            # Update overall rating
+            reviews_collection.update_one(
+                {'RecipeID': document['RecipeID']},  
+                [
+                  {
+                    '$set': {
+                      'Overall_Rating': {
+                        '$avg': '$Reviews.Rating' 
+                        }
+                    }
+                  }
+                ]
             )
         return redirect('/profile.html')  # Redirect to the profile page
         

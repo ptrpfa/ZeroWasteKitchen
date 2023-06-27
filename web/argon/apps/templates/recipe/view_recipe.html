@@ -12,6 +12,13 @@
         color:orange;
     }
 
+    #recipe-not-made{
+        color:#ea868f;
+    }
+
+    #review-added{
+        color: #75b798;
+    }
 </style>
 {% endblock stylesheets %}
 
@@ -96,7 +103,7 @@
                         <!-- Card body -->
                         <div class="card-body">
                             <div class="row">
-                                <div class="col">
+                                <div id='overall-ratings' class="col">
                                     <h5 class="card-title text-uppercase text-muted mb-0">Overall Ratings</h5>
                                     {% if recipe.Overall_Rating is not None %}
                                         <span class="h2 font-weight-bold mb-0">{{ recipe.Overall_Rating|floatformat:2 }}/5</span>
@@ -156,7 +163,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body">
+                <div id="reviewContainer" class="card-body">
                     {% if recipe.Reviews %}
                     {% for review in recipe.Reviews %}
                     <div class="review">
@@ -194,7 +201,7 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
-                    <form method="POST" action="{% url 'add_review' recipe_id=recipe.RecipeID %}">
+                    <form method="POST" id=add-review >
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="name">Name</label>
@@ -215,6 +222,8 @@
                             <textarea class="form-control" id="text" name="text" rows="3" required></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">Submit Review</button>
+                        <strong id="recipe-not-made" style="display: none;">Please click 'I Made This' before submitting a review.</strong>
+                        <strong id="review-added" style="display: none;">Review Added!</strong>
                     </form>
                 </div>                                          
             </div>
@@ -296,7 +305,20 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <script>
-
+    // Function to perform simple string cleaning
+    function clean_string(string) {
+      const map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#x27;",
+        "/": "&#x2F;",
+      };
+      const reg = /[&<>"'/]/gi;
+      return string.replace(reg, (match) => map[match]);
+    }
+  
     function add_user_recipe() {
       // AJAX call so confetti wont be interrupted
       $.ajax({
@@ -305,7 +327,7 @@
         data: {
           csrfmiddlewaretoken: "{{ csrf_token }}",
         },
-        dataType: 'json',
+        dataType: "json",
         success: function (data) {
           // Throw some confetti
           confetti({
@@ -319,5 +341,83 @@
         },
       });
     }
+  
+    $(document).ready(function () {
+      $("#add-review").submit(function (event) {
+        // AJAX call to add reviews
+        // Intercept form submission
+        event.preventDefault();
+        console.log("here");
+  
+        // Clean the strings submitted
+        var name = clean_string($("#name").val());
+        var text = clean_string($("#text").val());
+        var rating = $("#rating").val();
+        var cleaned_data = {
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+          name: name,
+          text: text,
+          rating: rating,
+        };
+  
+        // AJAX POST call
+        $.ajax({
+          url: "{% url 'add_review' recipe_id=recipe.RecipeID %}",
+          type: "POST",
+          data: cleaned_data,
+          dataType: "json",
+          success: function (data) {
+            if (!data.made) {
+              // Hide review added message
+              $("#review-added").hide();
+  
+              // Show error message
+              $("#recipe-not-made").show();
+  
+              // Hide message after 5 seconds
+              $("#recipe-not-made").delay(5000).fadeOut(400);
+            } else {
+              // Get HTML to update reviews and overall ratings
+              $.ajax({
+                url: "{% url 'recipe' recipe.RecipeID%}",
+                type: "GET",
+                success: function (response) {
+                  var $responseHtml = $(response);
+                  var $review_div = $responseHtml.find("#reviewContainer");
+                  var $overall_ratings_div =
+                    $responseHtml.find("#overall-ratings");
+  
+                  // Get overall ratings div and review container
+                  $("#reviewContainer").html($review_div.html());
+                  $("#overall-ratings").html($overall_ratings_div.html());
+  
+                  // Hide error message
+                  $("#recipe-not-made").hide();
+  
+                  // Show review added message
+                  $("#review-added").show();
+  
+                  // Hide the message after 2seconds
+                  $("#review-added").delay(2000).fadeOut(400);
+  
+                  // Reset form
+                  $("#text").val("");
+                  $("#rating").val("1");
+                },
+                error: function () {
+                  // For debugging
+                  console.error("Error geting HTML!");
+                },
+              });
+            }
+          },
+          error: function () {
+            // For debugging
+            console.log("Error updating database!");
+          },
+        });
+      });
+    });
   </script>
+  
 {% endblock javascripts %}
