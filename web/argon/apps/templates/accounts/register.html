@@ -9,6 +9,13 @@
         min-width: 400%;
     }
 
+    #diet-restrictions-container{
+        max-width: 300%;
+        white-space: normal;
+        position:absolute;
+        background-color: #f8f9fe;
+    }
+
     .card {
         border-radius: 10px;
     }
@@ -177,10 +184,18 @@
                                                 Select dietary restrictions
                                             </button>
                                             <div class="dropdown-menu wider" aria-labelledby="diet-restriction-dropdown">
-                                                <div id="diet-restrictions-container">
+                                                <div id="diet-restrictions-container" class="dropdown-item">
+                                                    <div class="input-group input-group-alternative input-group-merge mb-2">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                                        </div>
+                                                        <input class="form-control form-control-sm" id="restrictions-search" placeholder="Search for a restriction.." type="text" id="search_bar" style="padding-left: 1.5em">
+                                                    </div>
+
                                                     {% for restriction in diet_restrictions %}
-                                                        <span class="badge badge-primary diet-restriction-option mr-1">{{ restriction }}</span>
+                                                        <span class="badge badge-primary diet-restriction-option m-1">{{ restriction }}</span>
                                                     {% endfor %}
+												<p class="d-none" id="no-results-message">No restrictions found!😔</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -257,6 +272,31 @@
             function updateDietRestrictionsInput() {
                 $('#diet-restrictions-input').val(selectedDietRestrictions.join(','));
             }
+
+            $('#restrictions-search').on('input', function() {
+                var input = $(this).val().toLowerCase();
+                var noResultsMessage = $('#no-results-message');
+                var hasMatch = false;
+
+                // Iterate over each diet restriction span
+                $('#diet-restrictions-container span.diet-restriction-option').each(function() {
+                    var restriction = $(this).text().toLowerCase();
+                    
+                    // Check if the restriction matches the input
+                    if (restriction.includes(input)) {
+                            $(this).show();
+                            hasMatch = true;  
+                    } else {
+                            $(this).hide();  
+                    }
+                });
+
+                if (hasMatch) {
+                noResultsMessage.addClass('d-none');
+                } else {
+                    noResultsMessage.removeClass('d-none');
+                }
+            });
         });
     </script>
 {% endblock javascripts %}
