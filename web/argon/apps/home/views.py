@@ -1,5 +1,11 @@
 # -*- encoding: utf-8 -*-
-import re, html, json, math
+import re
+import html
+import json
+import math
+import gridfs
+import pathlib
+import base64
 from redis.commands.json.path import Path
 from hashlib import sha256
 from django.shortcuts import render, redirect
@@ -18,33 +24,36 @@ from pymongo import MongoClient
 from pymongo.cursor import CursorType
 
 
-
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
 instructions_collection = mongo_conn['Instructions']
 reviews_collection = mongo_conn['Reviews']
 nutrition_collection = mongo_conn['Nutrition']
+fs = gridfs.GridFS(mongo_conn)
 
 # Initialise global Redis connection
 redis_client = settings.get_redis()
 
-def clean_input (input_value):     
+
+def clean_input(input_value):
     # Decode HTML encoded characters (&amp; -> &)
-    input_value = html.unescape (input_value)
+    input_value = html.unescape(input_value)
 
     # Remove heading and trailing whitespaces
-    input_value = input_value.strip ()
+    input_value = input_value.strip()
 
     # Remove invalid characters
-    input_value = re.sub (r"[\[\];\'\"|\\]", "", input_value) 
+    input_value = re.sub(r"[\[\];\'\"|\\]", "", input_value)
 
     # Return cleaned input
     return input_value
+
 
 def get_hash(value, delimiter=''):
     if(isinstance(value, list)):
         value = delimiter.join(value)
     return sha256(value.encode('utf-8')).hexdigest()
+
 
 @login_required(login_url="/login/")
 def index(request):
@@ -52,6 +61,7 @@ def index(request):
 
     html_template = loader.get_template('home/index.html')
     return HttpResponse(html_template.render(context, request))
+
 
 @login_required(login_url="/login/")
 def pages(request):
@@ -77,11 +87,13 @@ def pages(request):
     except:
         html_template = loader.get_template('home/page-500.html')
         return HttpResponse(html_template.render(context, request))
-  
+
+
 @login_required(login_url="/login/")
 def get_recipes(request):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RAND() LIMIT 10")
+        cursor.execute(
+            "SELECT RecipeID, Name, Description, COALESCE(`MealType`, 'N/A'), Cuisine FROM recipe ORDER BY RAND() LIMIT 10")
         rows = cursor.fetchall()
 
     recipes = []
@@ -103,16 +115,24 @@ def get_recipes(request):
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
 
+
 @login_required(login_url="/login/")
 def view_recipe(request, id):
     # Query the 'Instructions' collection for the recipe with the specified RecipeID
     recipe_data = instructions_collection.find_one({'RecipeID': id})
-    
+
     # Query the 'Nutrition' collection for the nutrition information of the recipe
     nutrition_data = nutrition_collection.find_one({'RecipeID': id})
-    
+
     # Query the 'Reviews' collection for the reviews of the recipe
     reviews_data = reviews_collection.find_one({'RecipeID': id})
+
+    reviews = reviews_data.get('Reviews', []) if reviews_data else []
+    for data in reviews:
+        file_document = fs.find_one({'reviewID': data['ReviewID']})
+        data['mime_type'] = file_document.mime_type if file_document else None
+        data['content_type'] = file_document.content_type if file_document else None
+        data['file'] = base64.b64encode(file_document.read()).decode('ascii') if file_document else None
 
     # Define the default image URL
     default_image_url = "/static/assets/img/food/zwk.png"
@@ -128,17 +148,20 @@ def view_recipe(request, id):
 
     # Retrieve data from MySQL
     with connections['default'].cursor() as cursor:
-        cursor.execute("SELECT Name, Description, MealType, Cuisine FROM recipe WHERE RecipeID = %s", [id])
+        cursor.execute(
+            "SELECT Name, Description, MealType, Cuisine FROM recipe WHERE RecipeID = %s", [id])
         mysql_data = cursor.fetchone()
-    
-    # Combine the data from SQL and MongoDB 
+
+    # Combine the data from SQL and MongoDB
     context = {
         'recipe': {
             'RecipeID': id,
-            'Name': check_field(mysql_data[0]),               
-            'Description': check_field(mysql_data[1]),       
-            'MealType': check_field(mysql_data[2]),  # Add the 'MealType' field from MySQL
-            'Cuisine': check_field(mysql_data[3]),   # Add the 'Cuisine' field from MySQL
+            'Name': check_field(mysql_data[0]),
+            'Description': check_field(mysql_data[1]),
+            # Add the 'MealType' field from MySQL
+            'MealType': check_field(mysql_data[2]),
+            # Add the 'Cuisine' field from MySQL
+            'Cuisine': check_field(mysql_data[3]),
             'IngredientLines': recipe_data.get('Ingredient_Lines', []),
             'Instructions': recipe_data.get('Instructions', []),
             'TotalTime': check_field(recipe_data.get('Total_Time')),
@@ -150,12 +173,13 @@ def view_recipe(request, id):
             'Sodium': check_field(nutrition_data.get('Sodium')),
             'Carbohydrates': check_field(nutrition_data.get('Carbohydrates')),
             'Protein': check_field(nutrition_data.get('Protein')),
-            'Reviews': reviews_data.get('Reviews', []) if reviews_data else [],
+            'Reviews': reviews,
             'Overall_Rating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else None
         }
     }
 
     return render(request, 'recipe/view_recipe.html', context)
+
 
 @login_required(login_url="/login/")
 def add_to_user_recipe(request, recipe_id):
@@ -628,6 +652,7 @@ def process_search (request):
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
+
 @login_required(login_url="/login/")
 @post_request_only
 def get_suggested_ingredients(request):
@@ -651,31 +676,48 @@ def get_suggested_ingredients(request):
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
+
 @login_required(login_url="/login/")
 def add_review(request, recipe_id):
     if request.method == 'POST':
         name = request.user.username
         rating = int(request.POST['rating'])
         text = request.POST['text']
-        
+
         # Check if the user has made the recipe
         user_id = request.user.id
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM userrecipe WHERE UserID = %s AND RecipeID = %s", [user_id, recipe_id])
             recipe_exists = cursor.fetchone() is not None
-        
+
         if recipe_exists:
+            img = request.FILES.get('img')
+            review_id = generate_review_id(recipe_id)
+            if img:
+
+                img_data = img.read()
+
+                # Get the extension
+                extension = pathlib.Path(img.name).suffix
+                mime_type = img.content_type
+                content_type = mime_type.split('/')[0]
+
+                filename = str(review_id) + extension
+
+                # Save the file in gridFS
+                fs.put(img_data, filename=filename, mime_type=mime_type, content_type=content_type, reviewID=review_id)
+
             review = {
-                'ReviewID': generate_review_id(recipe_id),
+                'ReviewID': review_id,
                 'Name': name,
                 'Rating': rating,
                 'Text': text,
                 'UserID': user_id
             }
-            
+
             # Find the recipe document by RecipeID
             recipe = reviews_collection.find_one({'RecipeID': recipe_id})
-            
+
             if recipe is None:
                 # If the recipe doesn't exist, create a new document
                 recipe = {
@@ -687,27 +729,26 @@ def add_review(request, recipe_id):
             else:
                 # If the recipe exists, append the new review to the existing array
                 reviews_collection.update_one(
-                    {'RecipeID': recipe_id}, 
-                    {'$push': 
+                    {'RecipeID': recipe_id},
+                    {'$push':
                         {'Reviews': review}
-                    }
+                     }
                 )
-                
+
                 # Update overall rating
                 reviews_collection.update_one(
-                    {'RecipeID': recipe_id},  
+                    {'RecipeID': recipe_id},
                     [
                         {
                             '$set': {
                                 'Overall_Rating': {
-                                    '$avg': '$Reviews.Rating' 
+                                    '$avg': '$Reviews.Rating'
                                 }
                             }
                         }
                     ]
                 )
-            
-            
+
             json_response = json.dumps({ "made" : True })
             # Return response
             return HttpResponse (json_response, content_type='application/json;charset=utf-8')
@@ -716,7 +757,6 @@ def add_review(request, recipe_id):
             # User hasn't made the recipe, show an error message
             json_response = json.dumps({ "made" : False })
 
-            
             return HttpResponse (json_response, content_type='application/json;charset=utf-8')
     else:
         return render(request, 'recipe/view_recipe.html')

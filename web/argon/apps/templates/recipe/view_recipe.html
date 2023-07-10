@@ -19,6 +19,15 @@
     #review-added{
         color: #75b798;
     }
+
+    input[type="file"]{
+        width: 0.1px;
+        height: 0.1px;
+        opacity: 0;
+        overflow: hidden;
+        position: absolute;
+        z-index: -1;
+    }
 </style>
 {% endblock stylesheets %}
 
@@ -30,12 +39,12 @@
         <div class="header-body">
             <div class="row align-items-center py-4">
                 <div class="col-lg-6 col-7">
-                    <h6 class="h2 text-white d-inline-block mb-0">Default</h6>
+                    <h2 class="h2 text-white d-inline-block mb-0">{{recipe.Name}}</h2>
                     <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
                         <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
                             <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
-                            <li class="breadcrumb-item"><a href="#">Dashboards</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Default</li>
+                            <li class="breadcrumb-item"><a href="/search/">Search</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{recipe.Name}}</li>
                         </ol>
                     </nav>
                 </div>
@@ -175,7 +184,19 @@
                             <span class="{% if review.Rating >= 4 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
                             <span class="{% if review.Rating == 5 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
                         <p>{{ review.Text }}</p>
-                    </div>
+                        {% if review.file %}
+                            <div class="container-fluid">
+
+                            {% if review.content_type == 'image' %}
+                            <img class="img-fluid" src="data:{{review.mime_type}};base64, {{review.file}}">
+                            {% else %}
+                            <video controls>
+                                <source type="{{review.mime_type}}" src="data:{{review.mime_type}};base64, {{review.file}}">
+                            </video>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                </div>
                     {% if not loop.last %}
                     <hr>
                     {% endif %}
@@ -201,7 +222,7 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
-                    <form method="POST" id=add-review >
+                    <form method="POST" id='add-review' enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="name">Name</label>
@@ -220,6 +241,18 @@
                         <div class="form-group">
                             <label for="text">Review</label>
                             <textarea class="form-control" id="text" name="text" rows="3" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="img" class="btn btn-primary" id="upload-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;">
+                                    <path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" />
+                                    <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+                                </svg>
+
+                                Show your creation!
+                            </label>
+                            <input type="file" name="img" id="img" title=" " accept="image/*, video/*" />
                         </div>
                         <button type="submit" class="btn btn-primary">Submit Review</button>
                         <strong id="recipe-not-made" style="display: none;">Please click 'I Made This' before submitting a review.</strong>
@@ -241,7 +274,7 @@
           <div class="card-header bg-transparent">
             <div class="row align-items-center">
               <div class="col">
-                <h5 class="h3 mb-0"><strong>{{recipe.Name}}</strong></h5>
+                <h5 class="h3 mb-0"><strong>Recipe Information</strong></h5>
                 <ul>
                   <p>{{ recipe.Description }}</p>
                 </ul>
@@ -318,6 +351,8 @@
       const reg = /[&<>"'/]/gi;
       return string.replace(reg, (match) => map[match]);
     }
+
+    
   
     function add_user_recipe() {
       // AJAX call so confetti wont be interrupted
@@ -343,28 +378,52 @@
     }
   
     $(document).ready(function () {
+          $('#img').on('change', function() {
+                var fileName = $(this).val().split('\\').pop(); // Get the selected file name
+                if (fileName){
+                    $('#upload-btn').text(fileName); // Update the button text with the file name
+                } else {
+                    $('#upload-btn').html(
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;"><path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg> Show your creation!'
+                    )
+                }
+            });
+
       $("#add-review").submit(function (event) {
         // AJAX call to add reviews
         // Intercept form submission
         event.preventDefault();
         console.log("here");
   
-        // Clean the strings submitted
-        var name = clean_string($("#name").val());
-        var text = clean_string($("#text").val());
-        var rating = $("#rating").val();
-        var cleaned_data = {
-          csrfmiddlewaretoken: "{{ csrf_token }}",
-          name: name,
-          text: text,
-          rating: rating,
-        };
+        var form_data = new FormData();
+        form_data.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+        form_data.append('name', clean_string($("#name").val()));
+        form_data.append('text', clean_string($("#text").val()));
+        form_data.append('rating', $("#rating").val());
+        form_data.append('img', $('#img').prop('files')[0]);
+
+        // // Clean the strings submitted
+        // var name = clean_string($("#name").val());
+        // var text = clean_string($("#text").val());
+        // var rating = $("#rating").val();
+        
+
+
+        // var cleaned_data = {
+        //   csrfmiddlewaretoken: "{{ csrf_token }}",
+        //   name: name,
+        //   text: text,
+        //   rating: rating,
+        //   file: file
+        // };
   
         // AJAX POST call
         $.ajax({
           url: "{% url 'add_review' recipe_id=recipe.RecipeID %}",
           type: "POST",
-          data: cleaned_data,
+          data: form_data,
+          processData: false,
+          contentType: false,
           dataType: "json",
           success: function (data) {
             if (!data.made) {
