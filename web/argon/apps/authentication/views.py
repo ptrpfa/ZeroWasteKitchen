@@ -13,13 +13,14 @@ from django.db import connection
 from .models import Userdietrestriction, Dietrestriction,User
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
-
+from datetime import datetime, date
 from core import settings
 
 
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
 reviews_collection = mongo_conn['Reviews']
+nutrition_collection = mongo_conn['Nutrition']
 fs = gridfs.GridFS(mongo_conn)
 
 def login_view(request):
@@ -156,42 +157,77 @@ def view_profile(request):
             [user_id]
         )
         user_restrictions_data = cursor.fetchall()
-    
     # Process the retrieved user's dietary restrictions into a list
     user_restrictions = [restriction_data[0] for restriction_data in user_restrictions_data]
+    
+    today = date.today()
+    start_of_today = datetime.combine(today, datetime.min.time())
+    end_of_today = datetime.combine(today, datetime.max.time())
+    
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT RecipeID, Name FROM recipe")
+        recipe_data = cursor.fetchall()
+        recipe_mapping = {recipe[0]: recipe[1] for recipe in recipe_data}
+    
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT RecipeID FROM userrecipe WHERE UserID = %s AND Datetime >= %s AND Datetime <= %s", [user_id, start_of_today, end_of_today])
+        user_recipe_data = cursor.fetchall()
+        user_recipes = [{'RecipeID': recipe_data[0], 'RecipeName': recipe_mapping.get(recipe_data[0])} for recipe_data in user_recipe_data]
 
-    # Pass the reviews, diet restrictions, and user restrictions to the template context
+    # Get the list of RecipeIDs
+    recipe_ids = [recipe_data[0] for recipe_data in user_recipe_data]
+
+    # Query MongoDB collection for the RecipeIDs
+    nutrition_data = nutrition_collection.find({'RecipeID': {'$in': recipe_ids}})
+
+    nutrition_facts = []
+    total_calories = 0
+    for nutrition_fact in nutrition_data:
+        serving_size = nutrition_fact['Servings']
+        nutrition_fact['CaloriesPerServing'] = round(nutrition_fact['Calories'] / serving_size, 2)
+        nutrition_fact['ProteinPerServing'] = round(nutrition_fact['Protein'] / serving_size, 2)
+        nutrition_fact['CarbohydratesPerServing'] = round(nutrition_fact['Carbohydrates'] / serving_size, 2)
+        nutrition_fact['FatPerServing'] = round(nutrition_fact['Saturated_Fats'] / serving_size, 2)
+        nutrition_facts.append(nutrition_fact)
+        total_calories += nutrition_fact['CaloriesPerServing']
+
+
+    # Calculate remaining calories
+    daily_calories_limit = 2000
+    remaining_calories = daily_calories_limit - total_calories
+    recommended_recipes = nutrition_collection.aggregate([
+        {'$match': {
+            '$expr': {
+                '$lte': [{'$divide': ['$Calories', '$Servings']}, remaining_calories]
+            },
+            'Servings': {'$ne': 0}  
+        }},
+        {'$sample': {'size': 3}} 
+    ])
+
+    recommended_recipes_list = []
+    for recipe in recommended_recipes:
+        recipe_id = recipe['RecipeID']
+        recipe_name = recipe_mapping.get(recipe_id)
+        if recipe_name:
+            recipe['RecipeName'] = recipe_name
+            recommended_recipes_list.append(recipe)
+
     context = {
         'reviews': reviews,
         'diet_restrictions': diet_restrictions,
         'user_restrictions': user_restrictions,
-        'selected_diet_restrictions': user_restrictions  # Add this line to pass the selected diet restrictions
+        'selected_diet_restrictions': user_restrictions,  
+        'nutrition_facts': nutrition_facts,
+        'user_recipes': user_recipes,
+        'total_calories': total_calories,
+        'remaining_calories': remaining_calories,
+        'recommended_recipes': recommended_recipes_list,
     }
-
+    
     return render(request, 'home/profile.html', context)
 
 
-# tried to use raw but dont work.... dk why will firgure out
-# @login_required(login_url="/login/")
-# def update_review(request, review_id):
-#     if request.method == 'POST':
-#         rating = request.POST['rating']
-#         text = request.POST['text']
-#         query = "UPDATE Reviews SET Rating = %s, Text = %s WHERE ReviewID = %s"
-#         reviews_collection.execute(query, (rating, text, review_id))
-        
-#     return redirect('/profile.html')  # Redirect to the profile page
-        
-    
-
-# @login_required(login_url="/login/")
-# def delete_review(request, review_id):
-#     if request.method == 'GET':
-       
-#         query = "DELETE FROM Reviews WHERE ReviewID = %s"
-#         reviews_collection.execute(query, (review_id,))
-        
-#     return redirect('/profile.html')  # Redirect to the profile page
 
 @login_required(login_url="/login/")
 def update_review(request, review_id):
