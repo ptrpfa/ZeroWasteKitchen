@@ -1,6 +1,9 @@
 # -*- encoding: utf-8 -*-
 
 # Create your views here.
+import gridfs
+import base64
+import json
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from .forms import LoginForm, SignUpForm
@@ -17,8 +20,7 @@ from core import settings
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
 reviews_collection = mongo_conn['Reviews']
-
-
+fs = gridfs.GridFS(mongo_conn)
 
 def login_view(request):
     form = LoginForm(request.POST or None)
@@ -80,6 +82,7 @@ def register_user(request):
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success, "diet_restrictions": diet_restrictions})
 
+
 @login_required
 def update_profile(request):
     if request.method == "POST":
@@ -110,6 +113,14 @@ def view_profile(request):
             if review['UserID'] == user_id:
                 recipe_id = review_data['RecipeID']
                 
+                file_document = fs.find_one({'reviewID': review['ReviewID']})
+                file_data = {}
+                if file_document:
+                    file_data['mime_type'] = file_document.mime_type 
+                    file_data['content_type'] = file_document.content_type 
+                    file_data['file'] = base64.b64encode(file_document.read()).decode('ascii') 
+                    
+
                 # Retrieve the Recipe.Name from the recipe table based on RecipeID
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT Name FROM recipe WHERE RecipeID = %s", [recipe_id])
@@ -122,7 +133,8 @@ def view_profile(request):
                     'Text': review['Text'],
                     'UserID': review['UserID'],
                     'RecipeID': recipe_id,
-                    'RecipeName': recipe_data[0] if recipe_data else None
+                    'RecipeName': recipe_data[0] if recipe_data else None,
+                    'FileData' : file_data
                 }
                 reviews.append(review_item)
     
@@ -234,6 +246,12 @@ def delete_review(request, review_id):
                   }
                 ]
             )
+        # Check if file exists for this review
+        file_document = fs.find_one({ 'reviewID' : review_id })
+        if file_document: 
+            # Delete the file and their chunks
+            fs.delete(file_document._id)
+
         return redirect('/profile.html')  # Redirect to the profile page
         
     return redirect('home')  # Handle non-GET requests by redirecting to home page
@@ -257,6 +275,22 @@ def update_restriction(request):
 
         # Redirect the user to the profile page or any other appropriate page
         return redirect('/profile.html')
+
+@login_required
+def remove_image(request, review_id):
+    if request.method == "POST":
+        # Get _id
+        file_id = fs.find_one({ 'reviewID' : review_id })._id
+        fs.delete(file_id)
+        response = {
+            'success' : True
+        }
+        # User hasn't made the recipe, show an error message
+        json_response = json.dumps(response)
+        # Redirect to the profile page or any other desired location
+        return HttpResponse(json_response, content_type='application/json;charset=utf-8')
+
+    return redirect('/profile.html')
 
 
   

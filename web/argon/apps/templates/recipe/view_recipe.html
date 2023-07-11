@@ -255,8 +255,7 @@
                             <input type="file" name="img" id="img" title=" " accept="image/*, video/*" />
                         </div>
                         <button type="submit" class="btn btn-primary">Submit Review</button>
-                        <strong id="recipe-not-made" style="display: none;">Please click 'I Made This' before submitting a review.</strong>
-                        <strong id="review-added" style="display: none;">Review Added!</strong>
+                        <strong id="review-message" style="display: none;"></strong>
                     </form>
                 </div>                                          
             </div>
@@ -427,15 +426,23 @@
           dataType: "json",
           success: function (data) {
             if (!data.made) {
-              // Hide review added message
-              $("#review-added").hide();
+              $("#review-message").removeClass().addClass('text-warning').text("Please click 'I Made This' before submitting a review.");
+              $("#review-message").show();
   
-              // Show error message
-              $("#recipe-not-made").show();
+              // Hide message after 3 seconds
+              $("#review-message").delay(3000).fadeOut(400);
+            } else if (!data.valid_file){
+              $("#review-message").removeClass().addClass('text-warning').text("Invalid file type! Only submit a photo or video.");
+              $("#review-message").show();
   
-              // Hide message after 5 seconds
-              $("#recipe-not-made").delay(5000).fadeOut(400);
-            } else {
+              // Hide message after 3 seconds
+              $("#review-message").delay(3000).fadeOut(400);
+							// Reset form
+							$("#add-review")[0].reset()
+							$('#upload-btn').html(
+									'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;"><path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg> Show your creation!'
+							)
+						} else{
               // Get HTML to update reviews and overall ratings
               $.ajax({
                 url: "{% url 'recipe' recipe.RecipeID%}",
@@ -445,23 +452,22 @@
                   var $review_div = $responseHtml.find("#reviewContainer");
                   var $overall_ratings_div =
                     $responseHtml.find("#overall-ratings");
-  
+                    
                   // Get overall ratings div and review container
                   $("#reviewContainer").html($review_div.html());
                   $("#overall-ratings").html($overall_ratings_div.html());
-  
-                  // Hide error message
-                  $("#recipe-not-made").hide();
-  
-                  // Show review added message
-                  $("#review-added").show();
-  
-                  // Hide the message after 2seconds
-                  $("#review-added").delay(2000).fadeOut(400);
-  
-                  // Reset form
-                  $("#text").val("");
-                  $("#rating").val("1");
+                    
+                  $("#review-message").removeClass().addClass('text-success').text("Review Added!");
+									// Reset form
+									$("#add-review")[0].reset()
+									$('#upload-btn').html(
+                    	'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;"><path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg> Show your creation!'
+                  )
+									$("#review-message").show();
+			
+									// Hide message after 2 seconds
+									$("#review-message").delay(2000).fadeOut(400);
+
                 },
                 error: function () {
                   // For debugging

@@ -27,10 +27,16 @@
         background-color: #f8f9fe;
     }
 
+    .modal-body > video {
+      max-width: 100%;
+    }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js" integrity="sha384-fbbOQedDUMZZ5KreZpsbe1LCZPVmfTnH7ois6mU1QK+m14rQ1l2bGBq41eYeM/fS" crossorigin="anonymous"></script>
 
 <div class="header pb-6 d-flex align-items-center" style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
   <!-- Mask -->
@@ -128,40 +134,65 @@
           <h6 class="heading-small text-muted mb-4">Your Reviews</h6>
           <div class="pl-lg-4">
             {% if reviews %}
-            {% for review in reviews %}
-            <div class="card mb-3">
-              <div class="card-body">
-                <form method="post" action="{% url 'update_review' review.ReviewID %}">
-                  {% csrf_token %}
-                  <div class="form-group">
-                    <h1>{{ review.RecipeName }}</h1>
-                  </div>                  
-                  <div class="form-group">
-                    <label for="rating">Ratings:</label>
-                    <select class="form-control" id="rating" name="rating" required>
-                      <option value="" disabled selected>{{review.Rating}}</option>
-                      <option value="1" {% if review.Rating == 1 %}selected{% endif %}>1</option>
-                      <option value="2" {% if review.Rating == 2 %}selected{% endif %}>2</option>
-                      <option value="3" {% if review.Rating == 3 %}selected{% endif %}>3</option>
-                      <option value="4" {% if review.Rating == 4 %}selected{% endif %}>4</option>
-                      <option value="5" {% if review.Rating == 5 %}selected{% endif %}>5</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label for="text">Review:</label>
-                    <textarea class="form-control" id="text" name="text" rows="3" required>{{ review.Text }}</textarea>
-                  </div>
-                  <div class="text-left">
-                    <p class="card-review-id"><em>Review ID: {{ review.ReviewID }}</em></p>
-                  </div>
-                  <div class="text-right">
-                    <button class="btn btn-primary">Save Changes</button>
-                    <a href="{% url 'delete_review' review.ReviewID %}" class="btn btn-danger">Delete</a>
-                  </div>
-                </form>
-              </div>
-            </div>
-            {% endfor %}
+				{% for review in reviews %}
+				<div class="card mb-3">
+					<div class="card-body">
+						<form method="post" action="{% url 'update_review' review.ReviewID %}">
+						{% csrf_token %}
+						<div class="form-group">
+							<h1>{{ review.RecipeName }}</h1>
+						</div>                  
+						<div class="form-group">
+							<label for="rating">Ratings:</label>
+							<select class="form-control" id="rating" name="rating" required>
+							<option value="" disabled selected>{{review.Rating}}</option>
+							<option value="1" {% if review.Rating == 1 %}selected{% endif %}>1</option>
+							<option value="2" {% if review.Rating == 2 %}selected{% endif %}>2</option>
+							<option value="3" {% if review.Rating == 3 %}selected{% endif %}>3</option>
+							<option value="4" {% if review.Rating == 4 %}selected{% endif %}>4</option>
+							<option value="5" {% if review.Rating == 5 %}selected{% endif %}>5</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="text">Review:</label>
+							<textarea class="form-control" id="text" name="text" rows="3" required>{{ review.Text }}</textarea>
+						</div>
+
+						<div class="d-flex justify-content-between">
+							<p class="card-review-id"><em>Review ID: {{ review.ReviewID }}</em></p>
+							<div>
+							{% if review.FileData %}
+							<button id="view-file-{{ review.ReviewID }}" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#{{ review.ReviewID }}">
+								See {{ review.FileData.content_type }}
+							</button>
+							<div class="modal fade" id="{{ review.ReviewID }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+								<div class="modal-dialog modal-dialog-centered">
+									<div class="modal-content">
+										<div class="modal-body">
+											{% if review.FileData.content_type == 'image' %}
+											<img class="img-fluid" src="data:{{review.FileData.mime_type}};base64, {{review.FileData.file}}"/>
+											{% else %}
+											<video controls>
+												<source type="{{review.FileData.mime_type}}" src="data:{{review.FileData.mime_type}};base64, {{review.FileData.file}}"/>
+											</video>
+											{% endif %}
+										</div>
+										<div class="modal-footer">
+											<button type="button" class="btn btn-danger" onclick="remove_image('{{ review.ReviewID }}')" data-bs-dismiss="modal">Remove and Save</button>
+											<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+										</div>
+									</div>
+								</div>
+							</div>
+							{% endif %}
+							<button class="btn btn-primary">Save Changes</button>
+							<a href="{% url 'delete_review' review.ReviewID %}" class="btn btn-danger">Delete</a>
+							</div>
+						</div>
+						</form>
+					</div>
+				</div>
+				{% endfor %}
             {% else %}
             <p>No reviews found.</p>
             {% endif %}
@@ -184,59 +215,92 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-  $(document).ready(function() {
+
+  function remove_image(reviewid) {
+    $("#" + reviewid).modal("hide");
+    $("#" + reviewid).remove();
+    // AJAX call
+    $.ajax({
+      url: "{% url 'remove_image' review_id=0 %}".replace("0", reviewid),
+      type: "POST",
+      data: {
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      },
+      dataType: "json",
+      success: function (data) {
+		// Remove the view image/video button
+        $("#view-file-" + reviewid).remove();
+      },
+      error: function () {
+        // For debugging
+        console.log("Error updating database!");
+      },
+    });
+  }
+
+  $(document).ready(function () {
     var selectedDietRestrictions = [];
 
     // Click event for adding diet restrictions
-    $('.diet-restriction-option').click(function(e) {
+    $(".diet-restriction-option").click(function (e) {
       e.preventDefault();
-      var restriction = $(this).data('restriction');
+      var restriction = $(this).data("restriction");
       if (selectedDietRestrictions.indexOf(restriction) === -1) {
         selectedDietRestrictions.push(restriction);
-        var pill = $('<span class="badge badge-pill badge-primary">' + restriction + '</span>');
-        $('#selected-diet-restrictions-container').append(pill);
+        var pill = $(
+          '<span class="badge badge-pill badge-primary">' +
+            restriction +
+            "</span>"
+        );
+        $("#selected-diet-restrictions-container").append(pill);
         updateDietRestrictionsInput();
       } else {
-        alert('This restriction is already selected.');
+        alert("This restriction is already selected.");
       }
     });
     // Click event for removing diet restrictions
-    $('#selected-diet-restrictions-container').on('click', '.badge', function() {
-      var restriction = $(this).text().trim();
-      var index = selectedDietRestrictions.indexOf(restriction);
-      if (index !== -1) {
-        selectedDietRestrictions.splice(index, 1);
-        $(this).remove();
-        updateDietRestrictionsInput();
+    $("#selected-diet-restrictions-container").on(
+      "click",
+      ".badge",
+      function () {
+        var restriction = $(this).text().trim();
+        var index = selectedDietRestrictions.indexOf(restriction);
+        if (index !== -1) {
+          selectedDietRestrictions.splice(index, 1);
+          $(this).remove();
+          updateDietRestrictionsInput();
+        }
       }
-    });
+    );
     // Function to update the hidden input field
     function updateDietRestrictionsInput() {
-      $('#diet-restrictions-input').val(selectedDietRestrictions.join(','));
+      $("#diet-restrictions-input").val(selectedDietRestrictions.join(","));
     }
 
-    $('#restrictions-search').on('input', function() {
-    	var input = $(this).val().toLowerCase();
-			var noResultsMessage = $('#no-results-message');
-			var hasMatch = false;
+    $("#restrictions-search").on("input", function () {
+      var input = $(this).val().toLowerCase();
+      var noResultsMessage = $("#no-results-message");
+      var hasMatch = false;
 
-        // Iterate over each diet restriction span
-      $('#diet-restrictions-container span.diet-restriction-option').each(function() {
-				var restriction = $(this).text().toLowerCase();
-				
-				// Check if the restriction matches the input
-				if (restriction.includes(input)) {
-						$(this).show();
-						hasMatch = true;  
-				} else {
-						$(this).hide();  
-				}
-			});
-			if (hasMatch) {
-        	noResultsMessage.addClass('d-none');
-			} else {
-				noResultsMessage.removeClass('d-none');
-			}
+      // Iterate over each diet restriction span
+      $("#diet-restrictions-container span.diet-restriction-option").each(
+        function () {
+          var restriction = $(this).text().toLowerCase();
+
+          // Check if the restriction matches the input
+          if (restriction.includes(input)) {
+            $(this).show();
+            hasMatch = true;
+          } else {
+            $(this).hide();
+          }
+        }
+      );
+      if (hasMatch) {
+        noResultsMessage.addClass("d-none");
+      } else {
+        noResultsMessage.removeClass("d-none");
+      }
     });
   });
 </script>

@@ -13,11 +13,8 @@ urlpatterns = [
     path('profile/update/', views.update_profile, name='update_profile'),
     path('update_review/<int:review_id>/', views.update_review, name='update_review'),
     path('delete_review/<int:review_id>/', views.delete_review, name='delete_review'),
+    path('remove_image/<int:review_id>/', views.remove_image, name='remove_image'),
     path('profile.html', views.view_profile, name='view_profile'),
-    path('update_restriction/', views.update_restriction, name='update_restriction')
-
-
-
-
+    path('update_restriction/', views.update_restriction, name='update_restriction'),
 ]
 

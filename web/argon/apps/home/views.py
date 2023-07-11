@@ -693,6 +693,8 @@ def add_review(request, recipe_id):
         if recipe_exists:
             img = request.FILES.get('img')
             review_id = generate_review_id(recipe_id)
+
+            # Handle the file
             if img:
 
                 img_data = img.read()
@@ -702,8 +704,17 @@ def add_review(request, recipe_id):
                 mime_type = img.content_type
                 content_type = mime_type.split('/')[0]
 
-                filename = str(review_id) + extension
+                # Validate fiile type again
+                if content_type not in ['image', 'video']:
+                    response = {
+                        'made'       : True,
+                        'valid_file' : False
+                    }
+                    json_response = json.dumps(response)
+                    # Return response
+                    return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
+                filename = str(review_id) + extension
                 # Save the file in gridFS
                 fs.put(img_data, filename=filename, mime_type=mime_type, content_type=content_type, reviewID=review_id)
 
@@ -749,13 +760,20 @@ def add_review(request, recipe_id):
                     ]
                 )
 
-            json_response = json.dumps({ "made" : True })
+            response = {
+                'made'       : True,
+                'valid_file' : True
+            }
+            json_response = json.dumps(response)
             # Return response
             return HttpResponse (json_response, content_type='application/json;charset=utf-8')
         else:
 
+            response = {
+                'made' : False
+            }
             # User hasn't made the recipe, show an error message
-            json_response = json.dumps({ "made" : False })
+            json_response = json.dumps(response)
 
             return HttpResponse (json_response, content_type='application/json;charset=utf-8')
     else:
