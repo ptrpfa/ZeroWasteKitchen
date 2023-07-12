@@ -191,6 +191,10 @@ def view_challenges(request):
             break
     
     ingredient_count_percentage = (ingredient_count / 1) * 100
+    ingredient_count_percentage = round(ingredient_count_percentage)
+
+    total_percentage = ((total_calories_percentage + total_count_percentage + ingredient_count_percentage) / 300 )*100
+    total_percentage = round(total_percentage)
 
     context = {
         'total_calories': total_calories,
@@ -206,7 +210,8 @@ def view_challenges(request):
         'user_ingredients':user_ingredients,
         'ingredient_status':ingredient_status,
         'ingredient_count':ingredient_count,
-        'ingredient_count_percentage':ingredient_count_percentage
+        'ingredient_count_percentage':ingredient_count_percentage,
+        'total_percentage':total_percentage,
     }
     
     return render(request, 'home/challenges.html', context)
@@ -338,7 +343,7 @@ def view_profile(request):
         'total_calories': total_calories,
         'remaining_calories': remaining_calories,
         'recommended_recipes': recommended_recipes_list,
-        'daily_calories_limit': daily_calories_limit
+        'daily_calories_limit': daily_calories_limit,
     }
     
     return render(request, 'home/profile.html', context)

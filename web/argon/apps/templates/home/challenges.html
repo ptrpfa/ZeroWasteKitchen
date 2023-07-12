@@ -9,7 +9,7 @@
     <div class="container-fluid">
       <div class="header-body">
         <div class="row align-items-center py-4">
-          <div class="col-lg-6 col-7">
+          <div class="col-lg-12 col-12">
             <h6 class="h2 text-white d-inline-block mb-0">Complete The Challenges U FAT FUCK!</h6>
             <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
               <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
@@ -17,10 +17,6 @@
                 <li class="breadcrumb-item active" aria-current="page">Challenges</li>
               </ol>
             </nav>
-          </div>
-          <div class="col-lg-6 col-5 text-right">
-            <a href="#" class="btn btn-sm btn-neutral">New</a>
-            <a href="#" class="btn btn-sm btn-neutral">Filters</a>
           </div>
         </div>
       </div>
@@ -110,16 +106,6 @@
                       </div>
                     </div>                    
                   </td>
-                  <!-- <td class="text-right">
-                    <div class="dropdown">
-                      <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
-                      </a>
-                      <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
-                        <a class="dropdown-item" href="#">Give up</a>
-                      </div>
-                    </div>
-                  </td> -->
                 </tr>
                 <tr>
                   <th scope="row">
@@ -234,14 +220,16 @@
             </table>
           </div>
           <!-- Card footer -->
-          <div class="card-footer py-4 mb-4">
-            <i>All The Best!</i>
+          <div class="card-footer py-4" style="background: #f7fbff;">
+            <i>Progress: </i>
+            <div class="progress mt-3" style="height: 20px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ total_percentage }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ total_percentage }}%;">{{ total_percentage }}%</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-
 
     {% include "includes/footer.html" %}
 
@@ -251,53 +239,54 @@
   <!-- Additional Styles n Scripts -->
   <style>
     #timer {
-    color: #999;
-    letter-spacing: -1px;
-  }
-  #timer span {
-    color: #333;
-    margin: 0 3px 0 2px;
-  }
-  #timer span:first-child {
-    margin-left: 0;
-  }
+      color: #999;
+      letter-spacing: -1px;
+    }
+    #timer span {
+      color: #333;
+      margin: 0 3px 0 2px;
+    }
+    #timer span:first-child {
+      margin-left: 0;
+    }
+
   </style>
 
+<!-- Script -->
   <script>
-  var timer;
+    var timer;
 
-var compareDate = new Date();
-compareDate.setDate(compareDate.getDate() + 1); 
-compareDate.setHours(0, 0, 0, 0); // set the time to 00:00:00
+    var compareDate = new Date();
+    compareDate.setDate(compareDate.getDate() + 1); 
+    compareDate.setHours(0, 0, 0, 0); // set the time to 00:00:00
 
-timer = setInterval(function() {
-  timeBetweenDates(compareDate);
-}, 1000);
+    timer = setInterval(function() {
+      timeBetweenDates(compareDate);
+    }, 1000);
 
-function timeBetweenDates(toDate) {
-  var now = new Date();
-  var difference = toDate.getTime() - now.getTime();
+    function timeBetweenDates(toDate) {
+      var now = new Date();
+      var difference = toDate.getTime() - now.getTime();
 
-  if (difference <= 0) {
-    // Timer done
-    clearInterval(timer);
-  } else {
-    var seconds = Math.floor(difference / 1000);
-    var minutes = Math.floor(seconds / 60);
-    var hours = Math.floor(minutes / 60);
-    var days = Math.floor(hours / 24);
+      if (difference <= 0) {
+        // Timer done
+        clearInterval(timer);
+      } else {
+        var seconds = Math.floor(difference / 1000);
+        var minutes = Math.floor(seconds / 60);
+        var hours = Math.floor(minutes / 60);
+        var days = Math.floor(hours / 24);
 
-    hours %= 24;
-    minutes %= 60;
-    seconds %= 60;
+        hours %= 24;
+        minutes %= 60;
+        seconds %= 60;
 
-    $("#days").text(days);
-    $("#hours").text(hours);
-    $("#minutes").text(minutes);
-    $("#seconds").text(seconds);
-  }
-}
-
+        $("#days").text(days);
+        $("#hours").text(hours);
+        $("#minutes").text(minutes);
+        $("#seconds").text(seconds);
+      }
+    }
   </script>
 {% endblock content %}
 
