@@ -100,6 +100,46 @@ def update_profile(request):
     return render(request, "home/profile.html")
 
 @login_required
+def view_challenges(request):
+    user_id = request.user.id
+    
+    today = date.today()
+    start_of_today = datetime.combine(today, datetime.min.time())
+    end_of_today = datetime.combine(today, datetime.max.time())
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT RecipeID FROM userrecipe WHERE UserID = %s AND Datetime >= %s AND Datetime <= %s", [user_id, start_of_today, end_of_today])
+        user_recipe_data = cursor.fetchall()
+
+    # Calculate remaining calories
+    recipe_ids = [recipe_data[0] for recipe_data in user_recipe_data]
+
+    nutrition_data = nutrition_collection.find({'RecipeID': {'$in': recipe_ids}})
+
+    nutrition_facts = []
+    total_calories = 0
+    for nutrition_fact in nutrition_data:
+        serving_size = nutrition_fact['Servings']
+        nutrition_fact['CaloriesPerServing'] = round(nutrition_fact['Calories'] / serving_size, 2)
+        nutrition_facts.append(nutrition_fact)
+        total_calories += nutrition_fact['CaloriesPerServing']
+    
+    daily_calories_limit = 2000
+    remaining_calories = daily_calories_limit - total_calories
+
+    total_calories = round(total_calories,2)        
+    remaining_calories = round(remaining_calories,2)
+    
+
+    context = {
+        'total_calories': total_calories,
+        'remaining_calories': remaining_calories,
+        'daily_calories_limit': daily_calories_limit
+    }
+    
+    return render(request, 'home/challenges.html', context)
+
+@login_required
 def view_profile(request):
     # Get the user's ID
     user_id = request.user.id
@@ -331,8 +371,3 @@ def remove_image(request, review_id):
         return HttpResponse(json_response, content_type='application/json;charset=utf-8')
 
     return redirect('/profile.html')
-
-
-  
-
-        

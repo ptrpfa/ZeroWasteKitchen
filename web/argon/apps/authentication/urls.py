@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-from django.urls import path, include
+from django.urls import path
 from .views import login_view, register_user
 from django.contrib.auth.views import LogoutView
 from . import views
@@ -15,7 +15,7 @@ urlpatterns = [
     path('delete_review/<int:review_id>/', views.delete_review, name='delete_review'),
     path('remove_image/<int:review_id>/', views.remove_image, name='remove_image'),
     path('profile.html', views.view_profile, name='view_profile'),
+    path('challenges.html', views.view_challenges, name='view_challenges'),
     path('update_restriction/', views.update_restriction, name='update_restriction'),
-    path("accounts/", include("allauth.urls")),
 ]
 
