@@ -212,6 +212,9 @@ def view_profile(request):
         if recipe_name:
             recipe['RecipeName'] = recipe_name
             recommended_recipes_list.append(recipe)
+            
+    total_calories = round(total_calories,2)        
+    remaining_calories = round(remaining_calories,2)
 
     context = {
         'reviews': reviews,
@@ -223,6 +226,7 @@ def view_profile(request):
         'total_calories': total_calories,
         'remaining_calories': remaining_calories,
         'recommended_recipes': recommended_recipes_list,
+        'daily_calories_limit': daily_calories_limit
     }
     
     return render(request, 'home/profile.html', context)
