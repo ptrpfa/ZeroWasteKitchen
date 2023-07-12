@@ -37,10 +37,10 @@
       <div class="row">
          <div class="col-lg-7 col-md-10">
             <h1 class="display-2 text-white">
-               Hello {{ request.user.username }} !
+               Welcome, {{ request.user.username }} !
                
             </h1>
-            <p class="text-white mt-0 mb-5">Lets End World Hunger together! Give your food a second chance! Track your reviews below </p>
+            <p class="text-white mt-0 mb-5">Let's End World Hunger Together, Give Your Food A Second Chance! Track Your Reviews Below </p>
          </div>
       </div>
    </div>
@@ -189,6 +189,34 @@
                         <p>No reviews found.</p>
                         {% endif %}
                      </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="row">
+            <div class="col-12">
+               <div class="card">
+                  <div class="card-header">
+                     <div class="row align-items-center">
+                       <div class="col-6">
+                         <h3 class="d-inline-block">Challenges</h3>
+                       </div>
+                       <div class="col-6 text-right">
+                         <a href="{% url 'view_challenges' %}" class="btn btn-primary">View Challenges</a>
+                       </div>
+                     </div>
+                   </div>
+                   
+                  <div class="card-body">
+                     <form>
+                        <div class="pl-lg-4">
+                           <div class="row">
+                              <div class="mb-4">
+                                <!-- Insert challenge status here -->
+                            </div>
+                           </div>
+                        </div>
+                     </form>
                   </div>
                </div>
             </div>

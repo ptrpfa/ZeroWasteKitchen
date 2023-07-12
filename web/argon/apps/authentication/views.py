@@ -15,6 +15,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import datetime, date
 from core import settings
+import random
+from django.core.cache import cache
 
 
 # Initialise global MongoDB connections
@@ -107,14 +109,17 @@ def view_challenges(request):
     start_of_today = datetime.combine(today, datetime.min.time())
     end_of_today = datetime.combine(today, datetime.max.time())
 
+    # CALORIES
+    # Get recipe completed by user
     with connection.cursor() as cursor:
         cursor.execute("SELECT RecipeID FROM userrecipe WHERE UserID = %s AND Datetime >= %s AND Datetime <= %s", [user_id, start_of_today, end_of_today])
         user_recipe_data = cursor.fetchall()
 
-    # Calculate remaining calories
     recipe_ids = [recipe_data[0] for recipe_data in user_recipe_data]
 
     nutrition_data = nutrition_collection.find({'RecipeID': {'$in': recipe_ids}})
+
+    # Calculate remaining calories
 
     nutrition_facts = []
     total_calories = 0
@@ -126,15 +131,82 @@ def view_challenges(request):
     
     daily_calories_limit = 2000
     remaining_calories = daily_calories_limit - total_calories
+    total_calories_percentage = (total_calories / daily_calories_limit) * 100
 
     total_calories = round(total_calories,2)        
     remaining_calories = round(remaining_calories,2)
+    total_calories_percentage = round(total_calories_percentage)
+
+    if total_calories_percentage < 100:
+        calorie_status = "In Progress"
+    else:
+        calorie_status = "Completed"
+
+    # COUNT 
+    #get count of number of recipes completed by user
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(RecipeID) FROM userrecipe WHERE UserID = %s AND Datetime >= %s AND Datetime <= %s", [user_id, start_of_today, end_of_today])
+        user_recipe_count = cursor.fetchone()[0]
+
+    # count resets daily with challenge basis
+    recipe_count_number = 3
+
+    if user_recipe_count < recipe_count_number:
+        count_status = "In Progress"
+    else:
+        count_status = "Completed"
     
+    total_count_percentage = (user_recipe_count / recipe_count_number) * 100
+    total_count_percentage = round(total_count_percentage)
+
+    # INGREDIENTS
+    ingredient_array = ['Onion', 'Chicken', 'Salmon', 'Soy Sauce', 'Rice', 'Sugar', 'Salt']
+    current_day = datetime.now().weekday() # return int which can be referenced to the index of the array above
+
+    ingredient_of_the_day = ingredient_array[current_day]
+
+    # get ingredient name from user > recipe > ingredients
+    query = '''
+        SELECT i.Name
+        FROM auth_user u 
+        JOIN userrecipe ur ON u.id = ur.UserID 
+        JOIN recipe r ON ur.RecipeID = r.RecipeID 
+        JOIN recipeingredient ri ON r.RecipeID = ri.RecipeID 
+        JOIN ingredient i ON ri.IngredientID = i.IngredientID 
+        WHERE u.id = %s AND Datetime >= %s AND Datetime <= %s
+    '''
+    with connection.cursor() as cursor:
+        cursor.execute(query, [user_id, start_of_today, end_of_today])
+        result = cursor.fetchall()
+
+    user_ingredients = [row[0].lower() for row in result]
+
+    ingredient_status = 'In Progress'
+    ingredient_count = 0
+
+    for user_ingredient in user_ingredients:
+        if user_ingredient == ingredient_of_the_day.lower():
+            ingredient_status = 'Completed'
+            ingredient_count += 1
+            break
+    
+    ingredient_count_percentage = (ingredient_count / 1) * 100
 
     context = {
         'total_calories': total_calories,
         'remaining_calories': remaining_calories,
-        'daily_calories_limit': daily_calories_limit
+        'daily_calories_limit': daily_calories_limit,
+        'total_calories_percentage': total_calories_percentage,
+        'calorie_status': calorie_status,
+        'count_status': count_status,
+        'user_recipe_count':user_recipe_count,
+        'recipe_count_number': recipe_count_number,
+        'total_count_percentage': total_count_percentage,
+        'ingredient_of_the_day':ingredient_of_the_day,
+        'user_ingredients':user_ingredients,
+        'ingredient_status':ingredient_status,
+        'ingredient_count':ingredient_count,
+        'ingredient_count_percentage':ingredient_count_percentage
     }
     
     return render(request, 'home/challenges.html', context)
