@@ -26,7 +26,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'apps.home',  # Enable the inner home (home)
-    'apps.authentication'
+    'apps.authentication',
+    "django.contrib.sites", 
+    # 3rd party Sign In
+    "allauth", 
+    "allauth.account", 
+    "allauth.socialaccount", 
+    # social providers
+    "allauth.socialaccount.providers.google", 
+    "allauth.socialaccount.providers.twitter", 
     
 ]
 
@@ -125,3 +133,13 @@ STATICFILES_DIRS = (
 
 #############################################################
 #############################################################
+
+AUTHENTICATION_BACKENDS = (
+    "allauth.account.auth_backends.AuthenticationBackend",
+)
+
+# For Google or Social App Sign In
+SITE_ID = 1
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_LOGOUT_ON_GET = True
+SOCIALACCOUNT_LOGIN_ON_GET= True
