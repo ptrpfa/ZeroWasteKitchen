@@ -4,7 +4,7 @@ from django.urls import path, re_path
 from apps.home import views
 
 urlpatterns = [
-    path('', views.index, name='home'),                                                                         # The home page
+    path('', views.search_recipes, name='home'),                                                                # Root url
     path(r'recipe/<int:id>/', views.view_recipe, name='view_recipe'),                                           # View each individual recipe
     path(r'recipe/<int:recipe_id>/', views.view_recipe, name='view_recipe'),                                    # View each individual recipe
     # path(r'recipe/', views.get_recipes, name='recipe'),                                                         # TEMPORARY: view all recipes
