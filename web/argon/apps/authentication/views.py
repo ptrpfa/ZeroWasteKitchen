@@ -119,8 +119,7 @@ def view_challenges(request):
 
     nutrition_data = nutrition_collection.find({'RecipeID': {'$in': recipe_ids}})
 
-    # Calculate remaining calories
-
+    # Calculate calories
     nutrition_facts = []
     total_calories = 0
     for nutrition_fact in nutrition_data:
@@ -193,6 +192,7 @@ def view_challenges(request):
     ingredient_count_percentage = (ingredient_count / 1) * 100
     ingredient_count_percentage = round(ingredient_count_percentage)
 
+    # calculate percentage for progress bar
     total_percentage = ((total_calories_percentage + total_count_percentage + ingredient_count_percentage) / 300 )*100
     total_percentage = round(total_percentage)
 

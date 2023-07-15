@@ -16,7 +16,6 @@ urlpatterns = [
     path('remove_image/<int:review_id>/', views.remove_image, name='remove_image'),
     path('profile.html', views.view_profile, name='view_profile'),
     path('challenges.html', views.view_challenges, name='view_challenges'),
-
     path('update_restriction/', views.update_restriction, name='update_restriction'),
 ]
 
