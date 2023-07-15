@@ -39,7 +39,7 @@
         <div class="header-body">
             <div class="row align-items-center py-4">
                 <div class="col-lg-6 col-7">
-                    <h2 class="h2 text-white d-inline-block mb-0">{{recipe.Name}}</h2>
+                    <h2 class="h2 text-white d-inline-block mb-0" id="recipe_name">{{recipe.Name}}</h2>
                     <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
                         <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
                             <li class="breadcrumb-item"><a href="/search/"><i class="fas fa-home"></i></a></li>
@@ -141,7 +141,7 @@
             <div class="card bg-default">
                 <div class="card-header bg-transparent">
                     <div class="row align-items-center">
-                        <div class="col">
+                        <div class="col" id="recipe_image">
                             <img src="{{ recipe.Image }}" alt="Recipe Image"
                                 style="width: 100%; height: 400px; object-fit: cover;">
                         </div>
@@ -240,7 +240,7 @@
                         </div>
                         <div class="form-group">
                             <label for="text">Review</label>
-                            <textarea class="form-control" id="text" name="text" rows="3" required></textarea>
+                            <textarea class="form-control" id="reviewtext" name="text" rows="3" required></textarea>
                         </div>
 
                         <div class="form-group">
@@ -255,6 +255,22 @@
                             <input type="file" name="img" id="img" title=" " accept="image/*, video/*" />
                         </div>
                         <button type="submit" class="btn btn-primary">Submit Review</button>
+
+
+                         <div class="hero">
+                            <h1>Share Your Creation</h1>
+                            <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v11.0"
+                            nonce="0OfZ56Ys"></script>
+                            <div class="social-links">
+                              <a target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&amp;src=sdkpreparse" class="fb-xfbml-parse-ignore"><i class="fab fa-facebook-f"></i></a>
+                              <a href="https://instagram.com/dinie_aziz?igshid=MzRlODBiNWFlZA==" target="_blank"><i class="fab fa-instagram"></i></a>
+                              <a href="https://twitter.com/intent/tweet?source=webclient" onclick="updateTwitterText()"><i class="fab fa-twitter"></i></a>
+                              <a href="#" onclick="shareOnPinterest(); return false;"><i class="fab fa-pinterest"></i></a>
+                              <script type="text/javascript" async defer src="//assets.pinterest.com/js/pinit.js"></script>
+                                <!-- <a href=""><i class="fab fa-linkedin-in"></i></a> -->
+                            </div>
+                          </div>
+
                         <strong id="review-message" style="display: none;"></strong>
                     </form>
                 </div>                                          
@@ -483,6 +499,27 @@
         });
       });
     });
+
+    function updateTwitterText() {
+        var recipeName = document.getElementById("recipe_name").textContent;
+        var reviewText = document.getElementById("reviewtext").value;
+        var footerNote = " \n\n #ZeroWasteKitchen";
+        var websiteCredit = " - Courtesy of peteryau.com";
+        var message = "Check out my cooking review for " + recipeName + ": " + reviewText + footerNote + websiteCredit;
+
+        var twitterLink = document.querySelector("a[href^='https://twitter.com/intent/tweet']");
+   
+        twitterLink.href = "https://twitter.com/intent/tweet?source=webclient&text=" + encodeURIComponent(message);
+    }
+    function shareOnPinterest() {
+        var websiteURL = "xsite.com";
+        var reviewText = document.getElementById("reviewtext").value;
+        var imageURL = document.getElementById("recipe_image").querySelector("img").getAttribute("src");
+
+        var pinterestURL = "https://pinterest.com/pin/create/button/?url=" + encodeURIComponent(websiteURL) + "&description=" + encodeURIComponent(reviewText) + "&media=" + encodeURIComponent(imageURL);
+
+        window.open(pinterestURL, "_blank");
+    }
   </script>
   
 {% endblock javascripts %}
