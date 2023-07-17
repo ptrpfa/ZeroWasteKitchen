@@ -185,12 +185,12 @@
                             <span class="{% if review.Rating == 5 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
                         <p>{{ review.Text }}</p>
                         {% if review.file %}
-                            <div class="container-fluid">
+                        <div class="px-0 container-fluid">
 
                             {% if review.content_type == 'image' %}
                             <img class="img-fluid" src="data:{{review.mime_type}};base64, {{review.file}}">
                             {% else %}
-                            <video controls>
+                            <video controls style="max-width: 100%;">
                                 <source type="{{review.mime_type}}" src="data:{{review.mime_type}};base64, {{review.file}}">
                             </video>
                             {% endif %}
@@ -412,24 +412,9 @@
         var form_data = new FormData();
         form_data.append('csrfmiddlewaretoken', "{{ csrf_token }}");
         form_data.append('name', clean_string($("#name").val()));
-        form_data.append('text', clean_string($("#text").val()));
+        form_data.append('text', clean_string($("#reviewtext").val()));
         form_data.append('rating', $("#rating").val());
         form_data.append('img', $('#img').prop('files')[0]);
-
-        // // Clean the strings submitted
-        // var name = clean_string($("#name").val());
-        // var text = clean_string($("#text").val());
-        // var rating = $("#rating").val();
-        
-
-
-        // var cleaned_data = {
-        //   csrfmiddlewaretoken: "{{ csrf_token }}",
-        //   name: name,
-        //   text: text,
-        //   rating: rating,
-        //   file: file
-        // };
   
         // AJAX POST call
         $.ajax({
