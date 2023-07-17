@@ -161,8 +161,9 @@ def view_recipe(request, id):
             'Carbohydrates': check_field(nutrition_data.get('Carbohydrates')),
             'Protein': check_field(nutrition_data.get('Protein')),
             'Reviews': reviews,
-            'Overall_Rating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else None
-        }
+            'Overall_Rating': check_field(reviews_data.get('Overall_Rating')) if reviews_data else None,
+        },
+        'segment'  : 'search_recipe'
     }
 
     return render(request, 'recipe/view_recipe.html', context)
@@ -680,7 +681,18 @@ def add_review(request, recipe_id):
 
             # Handle the file
             if img:
-
+                # Validate fiile size
+                max_size = 20 * 1024 * 1024
+                if img.size > max_size:
+                    response = {
+                        'made'       : True,
+                        'valid_file' : False,
+                        'reason'     : "File too large! Max size of 20MB."
+                    }
+                    json_response = json.dumps(response)
+                    # Return response
+                    return HttpResponse (json_response, content_type='application/json;charset=utf-8')
+                
                 img_data = img.read()
 
                 # Get the extension
@@ -688,11 +700,12 @@ def add_review(request, recipe_id):
                 mime_type = img.content_type
                 content_type = mime_type.split('/')[0]
 
-                # Validate fiile type again
+                # Validate fiile type 
                 if content_type not in ['image', 'video']:
                     response = {
                         'made'       : True,
-                        'valid_file' : False
+                        'valid_file' : False,
+                        'reason'     : "Invalid file type! Only submit a photo or video."
                     }
                     json_response = json.dumps(response)
                     # Return response

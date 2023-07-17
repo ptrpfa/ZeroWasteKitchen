@@ -126,16 +126,17 @@ def view_challenges(request):
         total_calories += nutrition_fact['CaloriesPerServing']
     
     daily_calories_limit = 2000
-    remaining_calories = daily_calories_limit - total_calories
+    # remaining_calories = daily_calories_limit - total_calories not needed
     total_calories_percentage = (total_calories / daily_calories_limit) * 100
 
     total_calories = round(total_calories,2)        
-    remaining_calories = round(remaining_calories,2)
+    # remaining_calories = round(remaining_calories,2) not neeeded
     total_calories_percentage = round(total_calories_percentage)
 
     if total_calories_percentage < 100:
         calorie_status = "In Progress"
     else:
+        total_calories_percentage = 100
         calorie_status = "Completed"
 
     # COUNT 
@@ -149,11 +150,13 @@ def view_challenges(request):
 
     if user_recipe_count < recipe_count_number:
         count_status = "In Progress"
+        total_count_percentage = (user_recipe_count / recipe_count_number) * 100
+        total_count_percentage = round(total_count_percentage)
     else:
         count_status = "Completed"
+        total_count_percentage = 100
     
-    total_count_percentage = (user_recipe_count / recipe_count_number) * 100
-    total_count_percentage = round(total_count_percentage)
+
 
     # INGREDIENTS
     ingredient_array = ['Onion', 'Chicken', 'Salmon', 'Soy Sauce', 'Rice', 'Sugar', 'Salt']
@@ -195,7 +198,7 @@ def view_challenges(request):
 
     context = {
         'total_calories': total_calories,
-        'remaining_calories': remaining_calories,
+        # 'remaining_calories': remaining_calories, not needed
         'daily_calories_limit': daily_calories_limit,
         'total_calories_percentage': total_calories_percentage,
         'calorie_status': calorie_status,
@@ -209,6 +212,7 @@ def view_challenges(request):
         'ingredient_count':ingredient_count,
         'ingredient_count_percentage':ingredient_count_percentage,
         'total_percentage':total_percentage,
+        'segment'  : 'challenges'
     }
     
     return render(request, 'home/challenges.html', context)
@@ -218,6 +222,7 @@ def view_profile(request):
     # Get the user's ID
     user_id = request.user.id
     
+
     # Query the 'Reviews' collection for reviews by UserID within the 'Reviews' array
     reviews_data = reviews_collection.find({'Reviews.UserID': user_id})
     
@@ -231,11 +236,8 @@ def view_profile(request):
                 file_document = fs.find_one({'reviewID': review['ReviewID']})
                 file_data = {}
                 if file_document:
-                    file_data['mime_type'] = file_document.mime_type 
                     file_data['content_type'] = file_document.content_type 
-                    file_data['file'] = base64.b64encode(file_document.read()).decode('ascii') 
                     
-
                 # Retrieve the Recipe.Name from the recipe table based on RecipeID
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT Name FROM recipe WHERE RecipeID = %s", [recipe_id])
@@ -252,12 +254,13 @@ def view_profile(request):
                     'FileData' : file_data
                 }
                 reviews.append(review_item)
-    
+
+
     # Execute a raw SQL query to retrieve all dietary restrictions
     with connection.cursor() as cursor:
         cursor.execute("SELECT Name FROM dietrestriction")
         diet_restrictions_data = cursor.fetchall()
-    
+
     # Process the retrieved dietary restrictions into a list
     diet_restrictions = [restriction_data[0] for restriction_data in diet_restrictions_data]
     
@@ -273,7 +276,7 @@ def view_profile(request):
         user_restrictions_data = cursor.fetchall()
     # Process the retrieved user's dietary restrictions into a list
     user_restrictions = [restriction_data[0] for restriction_data in user_restrictions_data]
-    
+
     today = date.today()
     start_of_today = datetime.combine(today, datetime.min.time())
     end_of_today = datetime.combine(today, datetime.max.time())
@@ -294,17 +297,21 @@ def view_profile(request):
     # Query MongoDB collection for the RecipeIDs
     nutrition_data = nutrition_collection.find({'RecipeID': {'$in': recipe_ids}})
 
+    print(recipe_ids)
     nutrition_facts = []
     total_calories = 0
     for nutrition_fact in nutrition_data:
+        calculated_data = {
+            'RecipeID' : nutrition_fact['RecipeID']
+        }
         serving_size = nutrition_fact['Servings']
-        nutrition_fact['CaloriesPerServing'] = round(nutrition_fact['Calories'] / serving_size, 2)
-        nutrition_fact['ProteinPerServing'] = round(nutrition_fact['Protein'] / serving_size, 2)
-        nutrition_fact['CarbohydratesPerServing'] = round(nutrition_fact['Carbohydrates'] / serving_size, 2)
-        nutrition_fact['FatPerServing'] = round(nutrition_fact['Saturated_Fats'] / serving_size, 2)
-        nutrition_facts.append(nutrition_fact)
-        total_calories += nutrition_fact['CaloriesPerServing']
-
+        calculated_data['CaloriesPerServing'] = round(nutrition_fact['Calories'] / serving_size, 2)
+        calculated_data['ProteinPerServing'] = round(nutrition_fact['Protein'] / serving_size, 2)
+        calculated_data['CarbohydratesPerServing'] = round(nutrition_fact['Carbohydrates'] / serving_size, 2)
+        calculated_data['FatPerServing'] = round(nutrition_fact['Saturated_Fats'] / serving_size, 2)
+        nutrition_facts.append(calculated_data)
+        for _ in range(recipe_ids.count(nutrition_fact['RecipeID'])):
+            total_calories += calculated_data['CaloriesPerServing']
 
     # Calculate remaining calories
     daily_calories_limit = 2000
@@ -341,6 +348,7 @@ def view_profile(request):
         'remaining_calories': remaining_calories,
         'recommended_recipes': recommended_recipes_list,
         'daily_calories_limit': daily_calories_limit,
+        'segment'  : 'profile'
     }
     
     return render(request, 'home/profile.html', context)
@@ -426,6 +434,26 @@ def update_restriction(request):
 
         # Redirect the user to the profile page or any other appropriate page
         return redirect('/profile.html')
+
+@login_required
+def get_file_data(request):
+    if request.method == "POST":
+        review_ids = request.POST.getlist('review_ids[]')
+        file_data = {}
+
+        for review_id in review_ids:
+            file_document = fs.find_one({'reviewID': int(review_id)})
+            file_data[review_id] = {
+                'mime_type' : file_document.mime_type ,
+                'file' :  base64.b64encode(file_document.read()).decode('ascii') 
+            }
+
+        # User hasn't made the recipe, show an error message
+        json_response = json.dumps(file_data)
+        # Redirect to the profile page or any other desired location
+        return HttpResponse(json_response, content_type='application/json;charset=utf-8')
+
+    return redirect('/profile.html')
 
 @login_required
 def remove_image(request, review_id):

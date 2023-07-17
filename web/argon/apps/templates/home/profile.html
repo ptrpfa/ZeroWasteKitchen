@@ -8,19 +8,23 @@
    font-weight: 600;
    line-height: 1;
    }
+
    .badge:hover {
    cursor: pointer;
    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 0 rgba(247, 250, 252, 0.5);
    }
+
    .dropdown-menu.wider {
    min-width: 400%;
    }
+
    #diet-restrictions-container{
    max-width: 300%;
    white-space: normal;
    position:absolute;
    background-color: #f8f9fe;
    }
+
    .modal-body > video {
    max-width: 100%;
    }
@@ -91,7 +95,7 @@
                            <div class="form-group">
                               <div class="input-group">
                                  <div class="dropdown">
-                                    <button class="btn btn-primary dropdown-toggle w-200" type="button" id="diet-restriction-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <button class="btn btn-primary dropdown-toggle w-200 mb-3" type="button" id="diet-restriction-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Select dietary restrictions
                                     </button>
                                     <div class="dropdown-menu wider" aria-labelledby="diet-restriction-dropdown">
@@ -155,17 +159,17 @@
                                     <div>
                                        {% if review.FileData %}
                                        <button id="view-file-{{ review.ReviewID }}" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#{{ review.ReviewID }}">
-                                       See {{ review.FileData.content_type }}
+                                       See {{ review.FileData.content_type|capfirst }}
                                        </button>
-                                       <div class="modal fade" id="{{ review.ReviewID }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                       <div class="modal fade file-modal" id="{{ review.ReviewID }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                           <div class="modal-dialog modal-dialog-centered">
                                              <div class="modal-content">
                                                 <div class="modal-body">
                                                    {% if review.FileData.content_type == 'image' %}
-                                                   <img class="img-fluid" src="data:{{review.FileData.mime_type}};base64, {{review.FileData.file}}"/>
+                                                   <img class="img-fluid" id="file-content-{{ review.ReviewID }}" />
                                                    {% else %}
                                                    <video controls>
-                                                      <source type="{{review.FileData.mime_type}}" src="data:{{review.FileData.mime_type}};base64, {{review.FileData.file}}"/>
+                                                      <source id="file-content-{{ review.ReviewID }}"/>
                                                    </video>
                                                    {% endif %}
                                                 </div>
@@ -235,23 +239,23 @@
                                   <h2>{{ user_recipe.RecipeName }}</h2>
                                   {% for nutrition_fact in nutrition_facts %}
                                   {% if nutrition_fact.RecipeID == user_recipe.RecipeID %}
-                                  <p><strong>Calories per Serving:</strong> {{ nutrition_fact.CaloriesPerServing }}</p>
-                                  <p><strong>Protein per Serving:</strong> {{ nutrition_fact.ProteinPerServing }}</p>
-                                  <p><strong>Carbohydrates per Serving:</strong> {{ nutrition_fact.CarbohydratesPerServing }}</p>
-                                  <p><strong>Fat per Serving:</strong> {{ nutrition_fact.FatPerServing }}</p>
+                                  <p class="mb-1"><strong>Calories per Serving:</strong> {{ nutrition_fact.CaloriesPerServing }} kcal</p>
+                                  <p class="mb-1"><strong>Protein per Serving:</strong> {{ nutrition_fact.ProteinPerServing }} g</p>
+                                  <p class="mb-1"><strong>Carbohydrates per Serving:</strong> {{ nutrition_fact.CarbohydratesPerServing }} g</p>
+                                  <p class="mb-1"><strong>Fat per Serving:</strong> {{ nutrition_fact.FatPerServing }} g</p>
                                   {% endif %}
                                   {% endfor %}
                                </div>
                                {% endfor %}
                                <hr>
                                <div class="mb-4">
-                                <p><strong>Recommended Calories:</strong> {{daily_calories_limit }}</p>
+                                <p><strong>Recommended Calories:</strong> {{daily_calories_limit }} kcal</p>
                                </div>
                                <div class="mb-4">
-                                <p><strong>Total Calories for Today:</strong> {{ total_calories }}</p>
+                                <p><strong>Total Calories for Today:</strong> {{ total_calories }} kcal</p>
                              </div>
                                <div class="mb-4">
-                                  <p><strong>Remaining Calories:</strong> {{ remaining_calories }}</p>
+                                  <p><strong>Remaining Calories:</strong> {{ remaining_calories }} kcal</p>
                                </div>
                             </div>
                          </div>
@@ -279,7 +283,7 @@
                             {% for recipe in recommended_recipes %}
                             <div class="d-inline-block mr-3">
                                 <h4>{{ recipe.RecipeName }}</h4>
-                                <p><strong>Calories:</strong> {{ recipe.Calories }}</p>
+                                <p><strong>Calories:</strong> {{ recipe.Calories }} kcal</p>
                                 <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary d-inline-block">View Recipe</a>
                             </div>
                             <hr>
@@ -302,6 +306,49 @@
 <!-- Include jQuery library -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+
+	// Load all images and videos after document is loaded
+   $(document).ready(function() {
+		var review_ids = []; // Array to store the IDs
+
+		$('.file-modal').each(function() {
+			var reviewId = $(this).attr('id'); // Get the ID of each element representing review IDs
+			review_ids.push(reviewId);         // Append the ID to the array
+		});
+
+		// AJAX call
+		$.ajax({
+       url: "{% url 'get_file_data' %}",
+       type: "POST",
+       data: {
+         csrfmiddlewaretoken: "{{ csrf_token }}",
+				 review_ids: review_ids
+       },
+       dataType: "json",
+       success: function (data) {
+   			
+				// Iterate key and values of data
+				$.each(data, function(key, filedata) {
+					if ($('#file-content-' + key).is('img')) {
+						// Add image source
+						$('#file-content-' + key).attr('src', 'data:' + filedata['mime_type'] + ';base64, ' + filedata['file']);
+					} else {
+						// Add video source
+						$('#file-content-' + key).attr('src', 'data:' + filedata['mime_type'] + ';base64, ' + filedata['file']);
+						$('#file-content-' + key).attr('type', filedata['mime_type']);
+
+						// Load the video
+						$('#file-content-' + key).parent().get(0).load();
+					}
+				});
+       },
+       error: function () {
+         // For debugging
+         console.log("Error getting file data!");
+       },
+     });
+   });
+
    function remove_image(reviewid) {
      $("#" + reviewid).modal("hide");
      $("#" + reviewid).remove();
