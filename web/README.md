@@ -17,7 +17,7 @@
     python3 argon/manage.py migrate
     ```
 
-4. Create a copy of the `.env_prd` file to `.env`, and update settings (if any).
+4. Create a copy of the `.env_prod` file to `.env`, and update settings (if any).
     ```
     cp .env_prod .env
     ```
@@ -27,7 +27,7 @@
     python3 argon/manage.py runserver
     ```
 
-6. Default credentials (temporart)
+6. Default credentials (temporary)
     ```
     Username: test
     Password: test

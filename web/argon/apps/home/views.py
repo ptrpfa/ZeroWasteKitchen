@@ -48,7 +48,6 @@ def clean_input(input_value):
     # Return cleaned input
     return input_value
 
-
 def get_hash(value, delimiter=''):
     if(isinstance(value, list)):
         value = delimiter.join(value)
@@ -79,7 +78,7 @@ def pages(request):
         html_template = loader.get_template('home/page-500.html')
         return HttpResponse(html_template.render(context, request))
 
-
+# Testing route only
 @login_required(login_url="/login/")
 def get_recipes(request):
     with connection.cursor() as cursor:
@@ -105,7 +104,6 @@ def get_recipes(request):
 
     context = {'recipes': recipes}
     return render(request, 'recipe/index.html', context)
-
 
 @login_required(login_url="/login/")
 def view_recipe(request, id):
@@ -170,7 +168,6 @@ def view_recipe(request, id):
     }
 
     return render(request, 'recipe/view_recipe.html', context)
-
 
 @login_required(login_url="/login/")
 def add_to_user_recipe(request, recipe_id):
@@ -643,7 +640,6 @@ def process_search (request):
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
 
-
 @login_required(login_url="/login/")
 @post_request_only
 def get_suggested_ingredients(request):
@@ -666,7 +662,6 @@ def get_suggested_ingredients(request):
     json_response = json.dumps(json_response)
     # Return response
     return HttpResponse (json_response, content_type='application/json;charset=utf-8')
-
 
 @login_required(login_url="/login/")
 def add_review(request, recipe_id):
