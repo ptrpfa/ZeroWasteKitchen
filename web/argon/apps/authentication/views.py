@@ -18,7 +18,6 @@ from core import settings
 import random
 from django.core.cache import cache
 
-
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
 reviews_collection = mongo_conn['Reviews']
@@ -45,7 +44,6 @@ def login_view(request):
             msg = 'Error validating the form'
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
-
 
 def register_user(request):
     msg = None
@@ -84,7 +82,6 @@ def register_user(request):
         form = SignUpForm()
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": success, "diet_restrictions": diet_restrictions})
-
 
 @login_required
 def update_profile(request):
@@ -348,8 +345,6 @@ def view_profile(request):
     
     return render(request, 'home/profile.html', context)
 
-
-
 @login_required(login_url="/login/")
 def update_review(request, review_id):
     if request.method == 'POST':
@@ -412,7 +407,6 @@ def delete_review(request, review_id):
         return redirect('/profile.html')  # Redirect to the profile page
         
     return redirect('home')  # Handle non-GET requests by redirecting to home page
-
 
 def update_restriction(request):
     user_id = request.user.id

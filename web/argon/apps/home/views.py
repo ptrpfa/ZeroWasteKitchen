@@ -23,7 +23,6 @@ from django.contrib import messages
 from pymongo import MongoClient
 from pymongo.cursor import CursorType
 
-
 # Initialise global MongoDB connections
 mongo_client, mongo_conn = settings.get_mongodb()
 instructions_collection = mongo_conn['Instructions']
@@ -33,7 +32,6 @@ fs = gridfs.GridFS(mongo_conn)
 
 # Initialise global Redis connection
 redis_client = settings.get_redis()
-
 
 def clean_input(input_value):
     # Decode HTML encoded characters (&amp; -> &)

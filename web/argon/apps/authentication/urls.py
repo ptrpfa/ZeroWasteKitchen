@@ -5,7 +5,6 @@ from .views import login_view, register_user
 from django.contrib.auth.views import LogoutView
 from . import views
 
-
 urlpatterns = [
     path('login/', login_view, name="login"),
     path('register/', register_user, name="register"),
@@ -18,4 +17,3 @@ urlpatterns = [
     path('challenges.html', views.view_challenges, name='view_challenges'),
     path('update_restriction/', views.update_restriction, name='update_restriction'),
 ]
-
