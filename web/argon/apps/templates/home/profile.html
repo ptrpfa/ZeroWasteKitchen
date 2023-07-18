@@ -419,32 +419,30 @@
    $(".user-diet-restriction").each(function () {
       selectedDietRestrictions.push($(this).data("restriction"));
    });
-   });
+   //search
+   $('#restrictions-search').on('input', function() {
+      var input = $(this).val().toLowerCase();
+        var noResultsMessage = $('#no-results-message');
+        var hasMatch = false;
 
-     $("#restrictions-search").on("input", function () {
-       var input = $(this).val().toLowerCase();
-       var noResultsMessage = $("#no-results-message");
-       var hasMatch = false;
-   
        // Iterate over each diet restriction span
-       $("#diet-restrictions-container span.diet-restriction-option").each(
-         function () {
+     $('#diet-restrictions-container span.diet-restriction-option').each(function() {
            var restriction = $(this).text().toLowerCase();
-   
+
            // Check if the restriction matches the input
            if (restriction.includes(input)) {
-             $(this).show();
-             hasMatch = true;
+                 $(this).show();
+                 hasMatch = true;  
            } else {
-             $(this).hide();
+                 $(this).hide();  
            }
-         }
-       );
-       if (hasMatch) {
-         noResultsMessage.addClass("d-none");
-       } else {
-         noResultsMessage.removeClass("d-none");
-       }
-     });
+        });
+        if (hasMatch) {
+          noResultsMessage.addClass('d-none');
+        } else {
+           noResultsMessage.removeClass('d-none');
+        }
+   });
+   });
 </script>
 {% endblock javascripts %}
