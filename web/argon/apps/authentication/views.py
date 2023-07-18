@@ -88,15 +88,23 @@ def update_profile(request):
     if request.method == "POST":
         username = request.POST.get("username")
         email = request.POST.get("email")
+        
+        if "delete_account" in request.POST:
+            # Soft delete account set if_active to 0
+            user = request.user
+            user.is_active = False
+            user.save()
+            return redirect("/login.html")
 
-        # Update the user's information using raw SQL query
-        with connection.cursor() as cursor:
-            cursor.execute("UPDATE auth_user SET username = %s, email = %s WHERE id = %s", [username, email, request.user.id])
+        elif "save_changes" in request.POST:
+            # Update the user's information using raw SQL query
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE auth_user SET username = %s, email = %s WHERE id = %s", [username, email, request.user.id])
 
-        # Redirect to the profile page or any other desired location
-        return redirect("/profile.html")
+            return redirect("/profile.html")
 
     return render(request, "home/profile.html")
+
 
 @login_required
 def view_challenges(request):
