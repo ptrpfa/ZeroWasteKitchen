@@ -419,19 +419,23 @@ def delete_review(request, review_id):
         if file_document: 
             # Delete the file and their chunks
             fs.delete(file_document._id)
-
-        return redirect('/profile.html')  # Redirect to the profile page
+        return redirect('/profile.html')  
         
-    return redirect('home')  # Handle non-GET requests by redirecting to home page
+    return redirect('home')  
 
 def update_restriction(request):
     user_id = request.user.id
-
     if request.method == 'POST':
-        # Save the selected dietary restrictions for the user
+        # Save the selected dietary restrictions for the user 
         selected_restrictions = request.POST.getlist("diet_restrictions")
         restriction_names = selected_restrictions[0].split(",")
         with connection.cursor() as cursor:
+            # Delete existing dietary restrictions so that wont append causing duplicate records
+            cursor.execute(
+                "DELETE FROM userdietrestriction WHERE userid = %s",
+                [user_id]
+            )
+            # Insert the selected dietary restrictions into the table 
             for restriction_name in restriction_names:
                 cursor.execute(
                     "INSERT INTO userdietrestriction (userid, restrictionid) "
@@ -440,7 +444,6 @@ def update_restriction(request):
                     [user_id, restriction_name]
                 )
 
-        # Redirect the user to the profile page or any other appropriate page
         return redirect('/profile.html')
 
 @login_required

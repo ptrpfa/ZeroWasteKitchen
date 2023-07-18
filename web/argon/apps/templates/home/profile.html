@@ -115,12 +115,12 @@
                                     </div>
                                  </div>
                               </div>
-                              <input type="hidden" id="diet-restrictions-input" name="diet_restrictions" value="{{ selected_diet_restrictions }}">
+                              <input type="hidden" id="diet-restrictions-input" name="diet_restrictions" value="">
                               <div id="selected-diet-restrictions-container">
                                  {% for restriction in selected_diet_restrictions %}
-                                 <span class="badge badge-pill badge-primary">{{ restriction }}</span>
+                                 <span class="badge badge-pill badge-primary user-diet-restriction" data-restriction="{{ restriction }}">{{ restriction }}</span>
                                  {% endfor %}
-                              </div>
+                             </div>                             
                            </div>
                            <div class="text-right">
                               <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -375,42 +375,52 @@
    $(document).ready(function () {
      var selectedDietRestrictions = [];
    
-     // Click event for adding diet restrictions
-     $(".diet-restriction-option").click(function (e) {
-       e.preventDefault();
-       var restriction = $(this).data("restriction");
-       if (selectedDietRestrictions.indexOf(restriction) === -1) {
-         selectedDietRestrictions.push(restriction);
-         var pill = $(
-           '<span class="badge badge-pill badge-primary">' +
-             restriction +
-             "</span>"
-         );
-         $("#selected-diet-restrictions-container").append(pill);
-         updateDietRestrictionsInput();
-       } else {
-         alert("This restriction is already selected.");
-       }
-     });
-     // Click event for removing diet restrictions
-     $("#selected-diet-restrictions-container").on(
-       "click",
-       ".badge",
-       function () {
-         var restriction = $(this).text().trim();
+     // Function to update the hidden input field
+    function updateDietRestrictionsInput() {
+      var selectedRestrictions = selectedDietRestrictions.join(",");
+      $("#diet-restrictions-input").val(selectedRestrictions);
+  }
+   // Click event for adding diet restrictions
+   $(".diet-restriction-option").click(function (e) {
+      e.preventDefault();
+      var restriction = $(this).data("restriction");
+      if (selectedDietRestrictions.indexOf(restriction) === -1) {
+          selectedDietRestrictions.push(restriction);
+          var pill = $(
+              '<span class="badge badge-pill badge-primary user-diet-restriction" data-restriction="' +
+              restriction +
+              '">' +
+              restriction +
+              "</span>"
+          );
+          $("#selected-diet-restrictions-container").append(pill);
+          updateDietRestrictionsInput();
+      } else {
+          alert("This restriction is already selected.");
+      }
+  });
+
+   // Click event for removing diet restrictions
+   $("#selected-diet-restrictions-container").on(
+      "click",
+      ".user-diet-restriction",
+      function () {
+         var restriction = $(this).data("restriction");
          var index = selectedDietRestrictions.indexOf(restriction);
          if (index !== -1) {
-           selectedDietRestrictions.splice(index, 1);
-           $(this).remove();
-           updateDietRestrictionsInput();
+            selectedDietRestrictions.splice(index, 1);
+            $(this).remove();
+            updateDietRestrictionsInput();
          }
-       }
-     );
-     // Function to update the hidden input field
-     function updateDietRestrictionsInput() {
-       $("#diet-restrictions-input").val(selectedDietRestrictions.join(","));
-     }
-   
+      }
+   );
+
+   // Initialize the selected diet restrictions array with the existing pills
+   $(".user-diet-restriction").each(function () {
+      selectedDietRestrictions.push($(this).data("restriction"));
+   });
+   });
+
      $("#restrictions-search").on("input", function () {
        var input = $(this).val().toLowerCase();
        var noResultsMessage = $("#no-results-message");
@@ -436,6 +446,5 @@
          noResultsMessage.removeClass("d-none");
        }
      });
-   });
 </script>
 {% endblock javascripts %}
