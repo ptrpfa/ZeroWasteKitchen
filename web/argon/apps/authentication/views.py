@@ -324,23 +324,27 @@ def view_profile(request):
     # Calculate remaining calories
     daily_calories_limit = 2000
     remaining_calories = daily_calories_limit - total_calories
-    recommended_recipes = nutrition_collection.aggregate([
-        {'$match': {
-            '$expr': {
-                '$lte': [{'$divide': ['$Calories', '$Servings']}, remaining_calories]
-            },
-            'Servings': {'$ne': 0}  
-        }},
-        {'$sample': {'size': 3}} 
-    ])
+    #this is to check, if calories more than 0 then reccommend if not then dont!
+    if remaining_calories > 0:
+        recommended_recipes = nutrition_collection.aggregate([
+            {'$match': {
+                '$expr': {
+                    '$lte': [{'$divide': ['$Calories', '$Servings']}, remaining_calories]
+                },
+                'Servings': {'$ne': 0}  
+            }},
+            {'$sample': {'size': 3}} 
+        ])
 
-    recommended_recipes_list = []
-    for recipe in recommended_recipes:
-        recipe_id = recipe['RecipeID']
-        recipe_name = recipe_mapping.get(recipe_id)
-        if recipe_name:
-            recipe['RecipeName'] = recipe_name
-            recommended_recipes_list.append(recipe)
+        recommended_recipes_list = []
+        for recipe in recommended_recipes:
+            recipe_id = recipe['RecipeID']
+            recipe_name = recipe_mapping.get(recipe_id)
+            if recipe_name:
+                recipe['RecipeName'] = recipe_name
+                recommended_recipes_list.append(recipe)
+    else:
+        recommended_recipes_list = []
             
     total_calories = round(total_calories,2)        
     remaining_calories = round(remaining_calories,2)

@@ -8,23 +8,19 @@
    font-weight: 600;
    line-height: 1;
    }
-
    .badge:hover {
    cursor: pointer;
    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 0 rgba(247, 250, 252, 0.5);
    }
-
    .dropdown-menu.wider {
    min-width: 400%;
    }
-
    #diet-restrictions-container{
    max-width: 300%;
    white-space: normal;
    position:absolute;
    background-color: #f8f9fe;
    }
-
    .modal-body > video {
    max-width: 100%;
    }
@@ -42,7 +38,6 @@
          <div class="col-lg-7 col-md-10">
             <h1 class="display-2 text-white">
                Welcome, {{ request.user.username }} !
-               
             </h1>
             <p class="text-white mt-0 mb-5">Let's End World Hunger Together, Give Your Food A Second Chance! Track Your Reviews Below </p>
          </div>
@@ -120,7 +115,7 @@
                                  {% for restriction in selected_diet_restrictions %}
                                  <span class="badge badge-pill badge-primary user-diet-restriction" data-restriction="{{ restriction }}">{{ restriction }}</span>
                                  {% endfor %}
-                             </div>                             
+                              </div>
                            </div>
                            <div class="text-right">
                               <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -201,88 +196,90 @@
       </div>
    </div>
    <div class="col-5">
-    <!-- Nutrition content -->
-    <div class="container-fluid mt--6">
-       <div class="row">
-          <div class="col-12">
-             <div class="card">
-                <div class="card-header">
-                   <div class="row align-items-center">
-                      <div class="col-12">
-                         <h3 class="mb-0">Nutrition Calculator</h3>
-                      </div>
-                   </div>
-                </div>
-                <div class="card-body">
-                   <form>
-                      <h6 class="heading-small text-muted mb-4">Track Your Nutrition</h6>
-                      <div class="pl-lg-4">
-                         <div class="row">
-                            <div class="form-group">
-                               {% for user_recipe in user_recipes %}
-                               <div class="mb-4">
-                                  <h2>{{ user_recipe.RecipeName }}</h2>
-                                  {% for nutrition_fact in nutrition_facts %}
-                                  {% if nutrition_fact.RecipeID == user_recipe.RecipeID %}
-                                  <p class="mb-1"><strong>Calories per Serving:</strong> {{ nutrition_fact.CaloriesPerServing }} kcal</p>
-                                  <p class="mb-1"><strong>Protein per Serving:</strong> {{ nutrition_fact.ProteinPerServing }} g</p>
-                                  <p class="mb-1"><strong>Carbohydrates per Serving:</strong> {{ nutrition_fact.CarbohydratesPerServing }} g</p>
-                                  <p class="mb-1"><strong>Fat per Serving:</strong> {{ nutrition_fact.FatPerServing }} g</p>
-                                  {% endif %}
-                                  {% endfor %}
-                               </div>
-                               {% endfor %}
-                               <hr>
-                               <div class="mb-4">
-                                <p><strong>Recommended Calories:</strong> {{daily_calories_limit }} kcal</p>
-                               </div>
-                               <div class="mb-4">
-                                <p><strong>Total Calories for Today:</strong> {{ total_calories }} kcal</p>
-                             </div>
-                               <div class="mb-4">
-                                  <p><strong>Remaining Calories:</strong> {{ remaining_calories }} kcal</p>
-                               </div>
-                            </div>
-                         </div>
-                      </div>
-                   </form>
-                </div>  
-             </div>
-          </div>
-       </div>
-       <div class="row">
-        <div class="col-12">
-           <div class="card">
-              <div class="card-header">
-                 <div class="row align-items-center">
-                    <div class="col-8">
-                       <h3 class="mb-0">Recommended Recipes Based on Available Calories</h3>
-                    </div>
-                 </div>
-              </div>
-              <div class="card-body">
-                 <form>
-                    <div class="pl-lg-4">
-                       <div class="row">
-                          <div class="mb-4">
-                            {% for recipe in recommended_recipes %}
-                            <div class="d-inline-block mr-3">
-                                <h4>{{ recipe.RecipeName }}</h4>
-                                <p><strong>Calories:</strong> {{ recipe.Calories }} kcal</p>
-                                <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary d-inline-block">View Recipe</a>
-                            </div>
-                            <hr>
-                            {% endfor %}
+      <!-- Nutrition content -->
+      <div class="container-fluid mt--6">
+         <div class="row">
+            <div class="col-12">
+               <div class="card">
+                  <div class="card-header">
+                     <div class="row align-items-center">
+                        <div class="col-12">
+                           <h3 class="mb-0">Nutrition Calculator</h3>
                         </div>
-                       </div>
-                    </div>
-                 </form>
-              </div>
-           </div>
-        </div>
-     </div>
-    </div>
- </div> 
+                     </div>
+                  </div>
+                  <div class="card-body">
+                     <form>
+                        <h6 class="heading-small text-muted mb-4">Track Your Nutrition</h6>
+                        <div class="pl-lg-4">
+                           <div class="row">
+                              <div class="form-group">
+                                 {% for user_recipe in user_recipes %}
+                                 <div class="mb-4">
+                                    <h2>{{ user_recipe.RecipeName }}</h2>
+                                    {% for nutrition_fact in nutrition_facts %}
+                                    {% if nutrition_fact.RecipeID == user_recipe.RecipeID %}
+                                    <p class="mb-1"><strong>Calories per Serving:</strong> {{ nutrition_fact.CaloriesPerServing }} kcal</p>
+                                    <p class="mb-1"><strong>Protein per Serving:</strong> {{ nutrition_fact.ProteinPerServing }} g</p>
+                                    <p class="mb-1"><strong>Carbohydrates per Serving:</strong> {{ nutrition_fact.CarbohydratesPerServing }} g</p>
+                                    <p class="mb-1"><strong>Fat per Serving:</strong> {{ nutrition_fact.FatPerServing }} g</p>
+                                    {% endif %}
+                                    {% endfor %}
+                                 </div>
+                                 {% endfor %}
+                                 <hr>
+                                 <div class="mb-4">
+                                    <p><strong>Recommended Calories:</strong> {{daily_calories_limit }} kcal</p>
+                                 </div>
+                                 <div class="mb-4">
+                                    <p><strong>Total Calories for Today:</strong> {{ total_calories }} kcal</p>
+                                 </div>
+                                 <div class="mb-4">
+                                    <p><strong>Remaining Calories:</strong> <span id="remaining-calories">{{ remaining_calories }}</span></p>
+                                </div>                                
+                              </div>
+                           </div>
+                        </div>
+                     </form>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="row">
+            <div class="col-12">
+               <div class="card">
+                  <div class="card-header">
+                     <div class="row align-items-center">
+                        <div class="col-8">
+                           <h3 class="mb-0">Recommended Recipes Based on Available Calories</h3>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="card-body">
+                     <form>
+                        <div class="pl-lg-4">
+                           <div class="row">
+                              {% if recommended_recipes_list %}
+                              {% for recipe in recommended_recipes %}
+                              <div class="d-inline-block mr-3">
+                                 <h4>{{ recipe.RecipeName }}</h4>
+                                 <p><strong>Calories:</strong> {{ recipe.Calories }} kcal</p>
+                                 <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-primary d-inline-block">View Recipe</a>
+                              </div>
+                              <hr>
+                              {% endfor %}
+                              {% else %}
+                              <p>Sorry, you've exceeded your calorie limit for today! See you tomorrow!</p>
+                              {% endif %}
+                           </div>
+                        </div>
+                     </form>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
 </div>
 {% include "includes/footer.html" %}
 {% endblock content %}
@@ -291,142 +288,150 @@
 <!-- Include jQuery library -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-
-	// Load all images and videos after document is loaded
-   $(document).ready(function() {
-		var review_ids = []; // Array to store the IDs
-
-		$('.file-modal').each(function() {
-			var reviewId = $(this).attr('id'); // Get the ID of each element representing review IDs
-			review_ids.push(reviewId);         // Append the ID to the array
-		});
-
-		// AJAX call
-		$.ajax({
-       url: "{% url 'get_file_data' %}",
-       type: "POST",
-       data: {
-         csrfmiddlewaretoken: "{{ csrf_token }}",
-				 review_ids: review_ids
-       },
-       dataType: "json",
-       success: function (data) {
-   			
-				// Iterate key and values of data
-				$.each(data, function(key, filedata) {
-					if ($('#file-content-' + key).is('img')) {
-						// Add image source
-						$('#file-content-' + key).attr('src', 'data:' + filedata['mime_type'] + ';base64, ' + filedata['file']);
-					} else {
-						// Add video source
-						$('#file-content-' + key).attr('src', 'data:' + filedata['mime_type'] + ';base64, ' + filedata['file']);
-						$('#file-content-' + key).attr('type', filedata['mime_type']);
-
-						// Load the video
-						$('#file-content-' + key).parent().get(0).load();
-					}
-				});
-       },
-       error: function () {
-         // For debugging
-         console.log("Error getting file data!");
-       },
-     });
-   });
-
-   function remove_image(reviewid) {
-     $("#" + reviewid).modal("hide");
-     $("#" + reviewid).remove();
-     // AJAX call
-     $.ajax({
-       url: "{% url 'remove_image' review_id=0 %}".replace("0", reviewid),
-       type: "POST",
-       data: {
-         csrfmiddlewaretoken: "{{ csrf_token }}",
-       },
-       dataType: "json",
-       success: function (data) {
-   // Remove the view image/video button
-         $("#view-file-" + reviewid).remove();
-       },
-       error: function () {
-         // For debugging
-         console.log("Error updating database!");
-       },
-     });
-   }
+   // Load all images and videos after document is loaded
+     $(document).ready(function() {
+   	var review_ids = []; // Array to store the IDs
    
-   $(document).ready(function () {
-     var selectedDietRestrictions = [];
+   	$('.file-modal').each(function() {
+   		var reviewId = $(this).attr('id'); // Get the ID of each element representing review IDs
+   		review_ids.push(reviewId);         // Append the ID to the array
+   	});
    
-     // Function to update the hidden input field
-    function updateDietRestrictionsInput() {
-      var selectedRestrictions = selectedDietRestrictions.join(",");
-      $("#diet-restrictions-input").val(selectedRestrictions);
-  }
-   // Click event for adding diet restrictions
-   $(".diet-restriction-option").click(function (e) {
-      e.preventDefault();
-      var restriction = $(this).data("restriction");
-      if (selectedDietRestrictions.indexOf(restriction) === -1) {
-          selectedDietRestrictions.push(restriction);
-          var pill = $(
-              '<span class="badge badge-pill badge-primary user-diet-restriction" data-restriction="' +
-              restriction +
-              '">' +
-              restriction +
-              "</span>"
-          );
-          $("#selected-diet-restrictions-container").append(pill);
-          updateDietRestrictionsInput();
-      } else {
-          alert("This restriction is already selected.");
-      }
-  });
-
-   // Click event for removing diet restrictions
-   $("#selected-diet-restrictions-container").on(
-      "click",
-      ".user-diet-restriction",
-      function () {
-         var restriction = $(this).data("restriction");
-         var index = selectedDietRestrictions.indexOf(restriction);
-         if (index !== -1) {
-            selectedDietRestrictions.splice(index, 1);
-            $(this).remove();
+   	// AJAX call
+   	$.ajax({
+         url: "{% url 'get_file_data' %}",
+         type: "POST",
+         data: {
+           csrfmiddlewaretoken: "{{ csrf_token }}",
+   			 review_ids: review_ids
+         },
+         dataType: "json",
+         success: function (data) {
+     			
+   			// Iterate key and values of data
+   			$.each(data, function(key, filedata) {
+   				if ($('#file-content-' + key).is('img')) {
+   					// Add image source
+   					$('#file-content-' + key).attr('src', 'data:' + filedata['mime_type'] + ';base64, ' + filedata['file']);
+   				} else {
+   					// Add video source
+   					$('#file-content-' + key).attr('src', 'data:' + filedata['mime_type'] + ';base64, ' + filedata['file']);
+   					$('#file-content-' + key).attr('type', filedata['mime_type']);
+   
+   					// Load the video
+   					$('#file-content-' + key).parent().get(0).load();
+   				}
+   			});
+         },
+         error: function () {
+           // For debugging
+           console.log("Error getting file data!");
+         },
+       });
+     });
+   
+     function remove_image(reviewid) {
+       $("#" + reviewid).modal("hide");
+       $("#" + reviewid).remove();
+       // AJAX call
+       $.ajax({
+         url: "{% url 'remove_image' review_id=0 %}".replace("0", reviewid),
+         type: "POST",
+         data: {
+           csrfmiddlewaretoken: "{{ csrf_token }}",
+         },
+         dataType: "json",
+         success: function (data) {
+     // Remove the view image/video button
+           $("#view-file-" + reviewid).remove();
+         },
+         error: function () {
+           // For debugging
+           console.log("Error updating database!");
+         },
+       });
+     }
+     
+     $(document).ready(function () {
+       var selectedDietRestrictions = [];
+     
+       // Function to update the hidden input field
+      function updateDietRestrictionsInput() {
+        var selectedRestrictions = selectedDietRestrictions.join(",");
+        $("#diet-restrictions-input").val(selectedRestrictions);
+    }
+     // Click event for adding diet restrictions
+     $(".diet-restriction-option").click(function (e) {
+        e.preventDefault();
+        var restriction = $(this).data("restriction");
+        if (selectedDietRestrictions.indexOf(restriction) === -1) {
+            selectedDietRestrictions.push(restriction);
+            var pill = $(
+                '<span class="badge badge-pill badge-primary user-diet-restriction" data-restriction="' +
+                restriction +
+                '">' +
+                restriction +
+                "</span>"
+            );
+            $("#selected-diet-restrictions-container").append(pill);
             updateDietRestrictionsInput();
-         }
-      }
-   );
-
-   // Initialize the selected diet restrictions array with the existing pills
-   $(".user-diet-restriction").each(function () {
-      selectedDietRestrictions.push($(this).data("restriction"));
-   });
-   //search
-   $('#restrictions-search').on('input', function() {
-      var input = $(this).val().toLowerCase();
-        var noResultsMessage = $('#no-results-message');
-        var hasMatch = false;
-
-       // Iterate over each diet restriction span
-     $('#diet-restrictions-container span.diet-restriction-option').each(function() {
-           var restriction = $(this).text().toLowerCase();
-
-           // Check if the restriction matches the input
-           if (restriction.includes(input)) {
-                 $(this).show();
-                 hasMatch = true;  
-           } else {
-                 $(this).hide();  
-           }
-        });
-        if (hasMatch) {
-          noResultsMessage.addClass('d-none');
         } else {
-           noResultsMessage.removeClass('d-none');
+            alert("This restriction is already selected.");
         }
+    });
+   
+     // Click event for removing diet restrictions
+     $("#selected-diet-restrictions-container").on(
+        "click",
+        ".user-diet-restriction",
+        function () {
+           var restriction = $(this).data("restriction");
+           var index = selectedDietRestrictions.indexOf(restriction);
+           if (index !== -1) {
+              selectedDietRestrictions.splice(index, 1);
+              $(this).remove();
+              updateDietRestrictionsInput();
+           }
+        }
+     );
+   
+     // Initialize the selected diet restrictions array with the existing pills
+     $(".user-diet-restriction").each(function () {
+        selectedDietRestrictions.push($(this).data("restriction"));
+     });
+     //search
+     $('#restrictions-search').on('input', function() {
+        var input = $(this).val().toLowerCase();
+          var noResultsMessage = $('#no-results-message');
+          var hasMatch = false;
+   
+         // Iterate over each diet restriction span
+       $('#diet-restrictions-container span.diet-restriction-option').each(function() {
+             var restriction = $(this).text().toLowerCase();
+   
+             // Check if the restriction matches the input
+             if (restriction.includes(input)) {
+                   $(this).show();
+                   hasMatch = true;  
+             } else {
+                   $(this).hide();  
+             }
+          });
+          if (hasMatch) {
+            noResultsMessage.addClass('d-none');
+          } else {
+             noResultsMessage.removeClass('d-none');
+          }
+     });
+      $(document).ready(function () {
+         var remainingCalories = parseFloat($("#remaining-calories").text());
+
+         if (remainingCalories >= 0) {
+            $("#remaining-calories").text(remainingCalories + " kcal");
+         } else {
+            $("#remaining-calories").text("Exceeded by " + Math.abs(remainingCalories) + " kcal");
+         }
    });
-   });
+     });
 </script>
 {% endblock javascripts %}
