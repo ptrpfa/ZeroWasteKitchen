@@ -324,6 +324,7 @@ def view_profile(request):
     # Calculate remaining calories
     daily_calories_limit = 2000
     remaining_calories = daily_calories_limit - total_calories
+    print(remaining_calories)
     #this is to check, if calories more than 0 then reccommend if not then dont!
     if remaining_calories > 0:
         recommended_recipes = nutrition_collection.aggregate([
@@ -348,6 +349,7 @@ def view_profile(request):
             
     total_calories = round(total_calories,2)        
     remaining_calories = round(remaining_calories,2)
+
 
     context = {
         'reviews': reviews,
