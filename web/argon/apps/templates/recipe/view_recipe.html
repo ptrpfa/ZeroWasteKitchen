@@ -184,11 +184,11 @@
 										<span class="{% if review.Rating == 5 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
 								<p>{{ review.Text }}</p>
 								{% if review.file %}
-									<div class="px-0 container-fluid">
+									<div class="px-0" >
 										{% if review.content_type == 'image' %}
-											<img class="img-fluid" src="data:{{review.mime_type}};base64, {{review.file}}">
+											<img class="img-fluid" style="max-width: 100%; max-height: 400px; object-fit: cover;" src="data:{{review.mime_type}};base64, {{review.file}}">
 										{% else %}
-											<video controls style="max-width: 100%;">
+											<video controls style="max-width: 100%; max-height: 400px; object-fit: cover;">
 												<source type="{{review.mime_type}}" src="data:{{review.mime_type}};base64, {{review.file}}">
 											</video>
 										{% endif %}
