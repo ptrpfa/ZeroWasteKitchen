@@ -221,6 +221,7 @@
                     </div>
                     <div class="card-body pt-2">
                         <span style="background-color: #FF7766;" class="badge mb-2">{{ recipe.Cuisine }}</span>
+                        <span style="background-color: #FF7766;" class="badge mb-2">{{ recipe.MealType }}</span>
                         <p>{{ recipe.Description|truncatechars:100 }}..</p>             
                     </div>
                     <a href="{% url 'view_recipe' id=recipe.RecipeID %}" class="btn btn-block btn-primary b-0" style="transform: none;">View Recipe</a>
@@ -359,7 +360,7 @@
             }
             recipes += "<div class='col mb-4'><div class='card h-100'><img src='" + data.recipes[i].Image + "' class='card-img-top' alt='Recipe Image'>"
             recipes += "<div class='card-header d-flex pt-3 bg-light'><h5 class='card-title text-center align-middle'>" + data.recipes[i].Name + "</h5></div>"
-            recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].Cuisine + "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
+            recipes += "<div class='card-body pt-2'><span style='background-color: #FF7766;' class='badge mb-2 mr-2'>" + data.recipes[i].Cuisine +  "</span><span style='background-color: #FF7766;' class='badge mb-2'>" + data.recipes[i].MealType +  "</span><p>" + data.recipes[i].Description.substring(0, 100) + "..</p></div>"
             recipes += "<a href='/recipe/" + data.recipes[i].RecipeID + "/'class='btn btn-block btn-primary b-0' style='transform: none;'>View Recipe</a></div></div>"
             counter += 1
             if(counter == 4){
