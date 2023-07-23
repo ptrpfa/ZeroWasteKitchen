@@ -73,10 +73,27 @@ The `web/` folder contains the main source code used to deploy the Zero Waste Ki
     cp .env_prod .env
     ```
 
-6. Run the Django web application (default port 8000)!
+    For custom database configurations, ensure the following are modified in your `.env` file:
+    ```
+    DB_ENGINE=django.db.backends.mysql
+    DB_NAME=<MySQL database schema>
+    DB_HOST=<MySQL database host or domain>
+    DB_PORT=<MySQL database port>
+    DB_USER=<MySQL username>
+    DB_PASSWORD=<MySQL password>
+    MONGODB_NAME=<MongoDB database>
+    MONGODB_URI=<MongoDB database connection string>
+    REDIS_HOST=<Redis database host or domain>
+    REDIS_PORT=<Redis database port>
+    REDIS_PASSWORD=<Redis passowrd>
+    ```
+
+6. Run the Django web application (default port `8000`)!
     ```
     python3 argon/manage.py runserver
     ```
+
+7. Open up a web [browser](http://localhost:8000) and start using our application to get recipe recommendations!
 
     If you are using our Cloud databases, you can login using the following credentials:
     ```
