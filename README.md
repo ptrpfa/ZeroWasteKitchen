@@ -85,7 +85,7 @@ The `web/` folder contains the main source code used to deploy the Zero Waste Ki
     MONGODB_URI=<MongoDB database connection string>
     REDIS_HOST=<Redis database host or domain>
     REDIS_PORT=<Redis database port>
-    REDIS_PASSWORD=<Redis passowrd>
+    REDIS_PASSWORD=<Redis password>
     ```
 
 6. Run the Django web application (default port `8000`)!
@@ -107,7 +107,7 @@ The `web/` folder contains the main source code used to deploy the Zero Waste Ki
 #### MySQL Database Setup
 To setup your own MySQL database for this project, follow the instructions below:
 
-1. Ensure that you have MySQL installed on your computing environment.
+1. Ensure that you have MySQL installed on your computing environment. To install MySQL, click [here](https://dev.mysql.com/downloads/installer/).
 2. Run the following command to import the empty MySQL database that has been preloaded with all essential recipe data:
     ```
     mysql -u<username> -p < sql/Empty_17July2023.sql
@@ -117,3 +117,43 @@ To setup your own MySQL database for this project, follow the instructions below
     mysql -u<username> -p <schema name> < sql/Empty_17July2023.sql
     ```
 3. Modify your `.env` connection details so that the web application is able to connect to your new MySQL server! 
+    ```
+    DB_ENGINE=django.db.backends.mysql
+    DB_NAME=<MySQL database schema>
+    DB_HOST=<MySQL database host or domain>
+    DB_PORT=<MySQL database port>
+    DB_USER=<MySQL username>
+    DB_PASSWORD=<MySQL password>
+    ```
+
+### Redis Database Setup
+To setup your own Redis database for this project, follow the instructions below:
+
+1. Ensure that you have [Redis Stack](https://redis.io/docs/about/about-stack/) installed on your computing environment. Redis Stack is required as this project utilises the JSON document format to store its values. To install Redis Stack, click [here](https://redis.io/download/#redis-stack-downloads).
+
+2. Run the following command to ensure that the Redis Stack server runs continually in the background:
+    ```
+    redis-stack-server --daemonize yes
+    ```
+
+3. Configure your Redis Stack server's eviction policy to `allkeys-lfu` to remove least frequently used keys when the server's memory capacity is reached.
+    ```
+    redis-cli CONFIG SET maxmemory-policy allkeys-lfu
+    ```
+
+4. Configure your Redis Stack server to enable password authentication using the following command:
+    ```
+    redis-cli CONFIG SET requirepass "your password here"
+    ```
+
+5. Modify your `.env` connection details so that the web application is able to connect to your new Redis server! 
+    ```
+    REDIS_HOST=<Redis database host or domain>
+    REDIS_PORT=<Redis database port, usually 6379 for local environments>
+    REDIS_PASSWORD=<Redis password>
+    ```
+
+6. To stop the Redis Stack server you can enter the Redis CLI and enter the `shutdown` command:
+    ```
+    redis-cli shutdown
+    ```
