@@ -126,7 +126,24 @@ To setup your own MySQL database for this project, follow the instructions below
     DB_PASSWORD=<MySQL password>
     ```
 
-### Redis Database Setup
+#### MongoDB Setup
+
+1. Install the required MongoDB tools from the MongoDB download page. <em>[MongoDB Shell](https://www.mongodb.com/try/download/shell)</em> is needed to set up the database and <em>[MongoDB Command Line Database Tools](https://www.mongodb.com/try/download/database-tools)</em> is required to migrate the database.
+    
+2. A MongoDB Dump has been created and can be restored to setup the MongoDB database required for the application easily
+    ```
+    cd nosql
+    mongorestore --nsFrom "INF2005_DB.*" --nsTo "<MongoDB database>.*"
+    ```
+
+3. Modify your `.env` connection details so that the web application is able to connect to your new MongoDB server!
+    ```
+    MONGODB_NAME=<MongoDB database>
+    MONGODB_URI=<MongoDB database connection string>
+    ```
+    You can get your database connection string using `db.getMongo()` within your Mongo Shell
+
+#### Redis Database Setup
 To setup your own Redis database for this project, follow the instructions below:
 
 1. Ensure that you have [Redis Stack](https://redis.io/docs/about/about-stack/) installed on your computing environment. Redis Stack is required as this project utilises the JSON document format to store its values. To install Redis Stack, click [here](https://redis.io/download/#redis-stack-downloads).
