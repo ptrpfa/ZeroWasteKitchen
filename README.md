@@ -127,7 +127,7 @@ To setup your own MySQL database for this project, follow the instructions below
     ```
 
 #### MongoDB Setup
-
+To setup your own MongoDB database for this project, follow the instructions below:
 1. Install the required MongoDB tools from the MongoDB download page. <em>[MongoDB Shell](https://www.mongodb.com/try/download/shell)</em> is needed to set up the database and <em>[MongoDB Command Line Database Tools](https://www.mongodb.com/try/download/database-tools)</em> is required to migrate the database.
     
 2. A MongoDB Dump has been created and can be restored to setup the MongoDB database required for the application easily
@@ -141,7 +141,7 @@ To setup your own MySQL database for this project, follow the instructions below
     MONGODB_NAME=<MongoDB database>
     MONGODB_URI=<MongoDB database connection string>
     ```
-    You can get your database connection string using `db.getMongo()` within your Mongo Shell
+    You can get your database connection string using `db.getMongo()` within your Mongo Shell.
 
 #### Redis Database Setup
 To setup your own Redis database for this project, follow the instructions below:
