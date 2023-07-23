@@ -1,5 +1,3 @@
-knn github dont let me upload the csv
-
 RAW_recipes.csv
 
 recipe name
