@@ -34,7 +34,7 @@ A key-value-based Redis non-relational database is used for caching. The Redis d
 ```
 README.md (this file)
 
-docs/ (images for documenttion)
+docs/ (images for documentation)
 
 datasets/ (processed datasets obtained from the various data sources)
 
@@ -104,8 +104,16 @@ The `web/` folder contains the main source code used to deploy the Zero Waste Ki
     Otherwise, you can choose to login using Google SSO, or just register a new account to get started!
 
 ### Full Database Setup
-something here
-```
-python3 argon/manage.py makemigrations
-python3 argon/manage.py migrate
-```
+#### MySQL Database Setup
+To setup your own MySQL database for this project, follow the instructions below:
+
+1. Ensure that you have MySQL installed on your computing environment.
+2. Run the following command to import the empty MySQL database that has been preloaded with all essential recipe data:
+    ```
+    mysql -u<username> -p < sql/Empty_17July2023.sql
+    ```
+    This command will automatically create the `recipedb` database schema. If you plan on using a different schema (ensure that it is created), run the following command instead:
+    ```
+    mysql -u<username> -p <schema name> < sql/Empty_17July2023.sql
+    ```
+3. Modify your `.env` connection details so that the web application is able to connect to your new MySQL server! 
