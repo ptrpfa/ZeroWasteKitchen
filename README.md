@@ -36,7 +36,7 @@ README.md (this file)
 
 docs/ (images for documentation)
 
-datasets/ (processed datasets obtained from the various data sources)
+dataset_scripts/ (scripts used for dataset cleaning, for reference purposes)
 
 nosql/ (import files for the non-relational database)
 
