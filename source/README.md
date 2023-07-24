@@ -173,7 +173,7 @@ To setup your own Redis database for this project, follow the instructions below
     ```
 
     If you have configured the Redis Stack server properly, you should be able to start receiving cached queries when using the ZWK application!
-    ![Redis Example](/docs/redis_sample.png)
+    ![Redis Example](docs/redis_sample.png)
 
 6. To stop the Redis Stack server you can enter the Redis CLI and enter the `shutdown` command:
     ```
