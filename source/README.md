@@ -9,6 +9,8 @@ The "Zero Waste Kitchen" (ZWK) project aims to address the ongoing issue of hous
 ![ZWK](docs/ZWK.png)
 By leveraging on database technologies and advanced queries, the application offers users a seamless experience to input their available ingredients and receive tailored recipe suggestions instantly. For further recipe refinements, the application supports a suite of advanced filtering options, such as by dietary restrictions and number of ingredients. This provides users with creative and exciting ways to utilise their existing ingredients, thereby promoting sustainable and mindful cooking practices. To encourage the platform’s usage amongst users, ZWK also allows users to track recipes that they have cooked, participate in recipe challenges, leave recipe reviews, and engage with a community of likeminded food enthusiasts.
 
+For more information on the project, please refer to our video presentation [here](https://www.youtube.com/watch?v=C2ou7DC9yao).
+
 ### System Architecture
 <u>Overview</u><br>
 The ZWK project consists of a Django-based web application that serves as the primary interface for users to interact with the application, as well as a MySQL, MongoDB, and Redis database. The project builds on top of an existing Django template, Argon, to speed up development and focus the team’s efforts onto database operations. It is important to note that all SQL queries performed on the web application are implemented using raw SQL, even though Django provides its own ORM-model for queries. 
