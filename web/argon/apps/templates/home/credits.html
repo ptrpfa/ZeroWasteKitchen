@@ -1,0 +1,36 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Credits {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+    <div class="header pb-8 pt-5 pt-md-8">
+      <div class="container-fluid mt--7">
+        <div class="row">
+          <div class="col">
+            <div class="card shadow">
+              <div class="card-header bg-transparent">
+                <h3 class="mb-0">INF2003 Database Systems Group 9</h3>
+              </div>
+              <div class="card-body">
+                  <ul>
+                    <li>2200692 Pang Zi Jian Adrian</li>  
+                    <li>2200959 Peter Febrianto Afandy</li> 
+                    <li>2201014 Tng Jian Rong</li>  
+                    <li>2201132 Lionel Sim Wei Xian</li>  
+                    <li>2201159 Ryan Lai Wei Shao</li>  
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        {% include "includes/footer.html" %}
+  
+      </div>
+    </div>
+
+{% endblock content %}

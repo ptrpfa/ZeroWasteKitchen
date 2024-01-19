@@ -1,0 +1,501 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Dashboard {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+    .custom-gradient {
+        background: linear-gradient(135deg, #FF7F50 0%, #FF4E50 100%);
+    }
+    .fa-star{
+        color:orange;
+    }
+
+    #recipe-not-made{
+        color:#ea868f;
+    }
+
+    #review-added{
+        color: #75b798;
+    }
+
+    input[type="file"]{
+        width: 0.1px;
+        height: 0.1px;
+        opacity: 0;
+        overflow: hidden;
+        position: absolute;
+        z-index: -1;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="header custom-gradient pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col-lg-6 col-7">
+                    <h2 class="h2 text-white d-inline-block mb-0" id="recipe_name">{{recipe.Name}}</h2>
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                            <li class="breadcrumb-item"><a href="/search/"><i class="fas fa-home"></i></a></li>
+                            <li class="breadcrumb-item"><a href="/search/">Search</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{recipe.Name}}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-lg-6 col-5 text-right">
+                </div>
+            </div>
+            <!-- Card stats -->
+            <div class="row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card card-stats">
+                        <!-- Card body -->
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Cuisine</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{recipe.Cuisine}}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
+                                        <i class="ni ni-active-40"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card card-stats">
+                        <!-- Card body -->
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Total Calorie</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{recipe.Calories}}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow">
+                                        <i class="ni ni-chart-pie-35"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card card-stats">
+                        <!-- Card body -->
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Number of Mins</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{recipe.TotalTime}}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
+                                        <i class="ni ni-money-coins"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card card-stats">
+                        <!-- Card body -->
+                        <div class="card-body">
+                            <div class="row">
+                                <div id='overall-ratings' class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Overall Ratings</h5>
+                                    {% if recipe.Overall_Rating is not None %}
+                                        <span class="h2 font-weight-bold mb-0">{{ recipe.Overall_Rating|floatformat:2 }}/5</span>
+                                    {% else %}
+                                        <span class="h2 font-weight-bold mb-0">No ratings yet!</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
+                                        <i class="ni ni-chart-bar-32"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+	<div class="row">
+		<div class="col-xl-8">
+			<div class="card bg-default">
+				<div class="card-header bg-transparent">
+					<div class="row align-items-center">
+						<div class="col" id="recipe_image">
+							<img src="{{ recipe.Image }}" alt="Recipe Image" style="width: 100%; height: 400px; object-fit: cover;">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header border-0">
+					<div class="row align-items-center">
+						<div class="col">
+							<h3 class="mb-0">Instructions</h3>
+						</div>
+					</div>
+				</div>
+				<div class="card-body">
+					<ol>
+						{% for instruction in recipe.Instructions %}
+							<li>{{ instruction.Description }}</li>
+						{% endfor %}
+					</ol>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header border-0">
+					<div class="row align-items-center">
+						<div class="col">
+							<h3 class="mb-0">Reviews</h3>
+						</div>
+					</div>
+				</div>
+				<div id="reviewContainer" class="card-body">
+					{% if recipe.Reviews %}
+						{% for review in recipe.Reviews %}
+							<div class="review">
+								<p><strong>Name:</strong> {{ review.Name }}</p>
+								<p><strong>Rating:</strong> 
+										<span class="{% if review.Rating >= 1 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+										<span class="{% if review.Rating >= 2 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+										<span class="{% if review.Rating >= 3 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+										<span class="{% if review.Rating >= 4 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+										<span class="{% if review.Rating == 5 %} fa fa-star  {% else %} far fa-star {% endif %}"></span>
+								<p>{{ review.Text }}</p>
+								{% if review.file %}
+									<div class="px-0" >
+										{% if review.content_type == 'image' %}
+											<img class="img-fluid" style="max-width: 100%; max-height: 400px; object-fit: cover;" src="data:{{review.mime_type}};base64, {{review.file}}">
+										{% else %}
+											<video controls style="max-width: 100%; max-height: 400px; object-fit: cover;">
+												<source type="{{review.mime_type}}" src="data:{{review.mime_type}};base64, {{review.file}}">
+											</video>
+										{% endif %}
+									</div>
+								{% endif %}
+							</div>
+							{% if not loop.last %}
+								<hr>
+							{% endif %}
+						{% endfor %}
+					{% else %}
+						<p class="no-reviews">No reviews available</p>
+					{% endif %}
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header bg-transparent">
+					<div class="row align-items-center">
+						<div class="col">
+							<h3 class="mb-0">Add Review</h3>
+						</div>
+					</div>
+				</div>
+				<div class="card-body">
+						{% if messages %}
+								<ul class="messages">
+										{% for message in messages %}
+												<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+										{% endfor %}
+								</ul>
+						{% endif %}
+						<form method="POST" id='add-review' enctype="multipart/form-data">
+						{% csrf_token %}
+						<div class="form-group">
+								<label for="name">Name</label>
+								<input type="text" class="form-control" id="name" name="name" placeholder="{{ user.username }}" readonly>
+						</div>
+						<div class="form-group">
+							<label for="rating">Rating</label>
+							<select class="form-control" id="rating" name="rating" required>
+								<option value="1">1</option>
+								<option value="2">2</option>
+								<option value="3">3</option>
+								<option value="4">4</option>
+								<option value="5">5</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="text">Review</label>
+							<textarea class="form-control" id="reviewtext" name="text" rows="3" required></textarea>
+						</div>
+
+						<div class="form-group">
+								<label for="img" class="btn btn-primary" id="upload-btn">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;">
+										<path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" />
+										<path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+									</svg>
+
+										Show your creation!
+								</label>
+								<input type="file" name="img" id="img" title=" " accept="image/*, video/*" max="20"/>
+						</div>
+						<button type="submit" class="btn btn-primary">Submit Review</button>
+						<strong id="review-message" style="display: none;"></strong>
+							<div class="hero mt-4">
+								<h2>Share Your Creation</h2>
+								<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v11.0"
+								nonce="0OfZ56Ys"></script>
+								<div class="social-links">
+									<a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&amp;src=sdkpreparse" class="fb-xfbml-parse-ignore" target="_blank"><i class="fab fa-facebook-f"></i></a>
+									<a href="https://instagram.com/dinie_aziz?igshid=MzRlODBiNWFlZA==" target="_blank"><i class="fab fa-instagram"></i></a>
+									<a href="https://twitter.com/intent/tweet?source=webclient" onclick="updateTwitterText()" target="_blank"><i class="fab fa-twitter"></i></a>
+									<a href="#" onclick="shareOnPinterest(); return false;" target="_blank"><i class="fab fa-pinterest"></i></a>
+									<script type="text/javascript" async defer src="//assets.pinterest.com/js/pinit.js"></script>
+										<!-- <a href=""><i class="fab fa-linkedin-in"></i></a> -->
+								</div>
+							</div>
+						</form>
+				</div>                                          
+			</div>
+			<div class="table-responsive">
+				<!-- Projects table -->
+				<table class="table align-items-center table-flush">
+					<thead class="thead-light">
+					</thead>
+				</table>
+			</div>
+		</div>
+
+    <div class="col-xl-4">
+			<div class="card">
+				<div class="card-header bg-transparent pb-0">
+					<div class="row align-items-center">
+						<div class="col">
+							<h5 class="h3 mb-0"><strong>Recipe Information</strong></h5>
+
+								<p class="mb-0 py-2">{{ recipe.Description }}</p>
+								<hr class="mb-0 mt-2">
+								<div class="text-center my-4">	
+									<button type="button" class="btn btn-primary" onclick="add_user_recipe()">I Made This!</button>
+								</div>
+							</div>
+					</div>
+				</div>
+			</div>
+		
+			<div class="card mt-3">
+				<div class="card-header bg-transparent">
+					<div class="row align-items-center">
+						<div class="col">
+							<h5 class="h3 mb-0">Ingredients Needed</h5>
+							<ul>
+								{% for ingredient in recipe.IngredientLines %}
+								<li>{{ ingredient }}</li>
+								{% endfor %}
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		
+			<div class="card mt-3">
+				<div class="card-header bg-transparent">
+					<div class="row align-items-center">
+						<div class="col">
+							<h5 class="h3 mb-0">Recipe Macros</h5>
+								<p class="mt-2 mb-1"><strong>Servings:</strong> {{ recipe.Servings }}</p>
+								<p class="mb-1"><strong>Calories:</strong> {{ recipe.Calories }} kcal</p>
+								<p class="mb-1"><strong>Total Fats:</strong> {{ recipe.Fats }} g</p>
+								<p class="mb-1"><strong>Sodium:</strong> {{ recipe.Sodium }} g</p>
+								<p class="mb-1"><strong>Carbohydrates:</strong> {{ recipe.Carbohydrates }} g</p>
+								<p class="mb-1"><strong>Protein:</strong> {{ recipe.Protein }} g</p>
+						</div>
+					</div>
+				</div>
+			</div>
+  	</div>
+	</div>
+	{% include "includes/footer.html" %}
+
+</div>
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+    // Function to perform simple string cleaning
+    function clean_string(string) {
+      const map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#x27;",
+        "/": "&#x2F;",
+      };
+      const reg = /[&<>"'/]/gi;
+      return string.replace(reg, (match) => map[match]);
+    }
+
+    
+  
+    function add_user_recipe() {
+      // AJAX call so confetti wont be interrupted
+      $.ajax({
+        url: "{% url 'add_to_user_recipe' recipe.RecipeID%}",
+        type: "POST",
+        data: {
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        dataType: "json",
+        success: function (data) {
+          // Throw some confetti
+          confetti({
+            particleCount: 500,
+            spread: 180,
+          });
+        },
+        error: function () {
+          // For debugging
+          console.log("Error updating database!");
+        },
+      });
+    }
+  
+    $(document).ready(function () {
+          $('#img').on('change', function() {
+                var fileName = $(this).val().split('\\').pop(); // Get the selected file name
+                if (fileName){
+                    $('#upload-btn').text(fileName); // Update the button text with the file name
+                } else {
+                    $('#upload-btn').html(
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;"><path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg> Show your creation!'
+                    )
+                }
+            });
+
+      $("#add-review").submit(function (event) {
+        // AJAX call to add reviews
+        // Intercept form submission
+        event.preventDefault();
+        console.log("here");
+  
+        var form_data = new FormData();
+        form_data.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+        form_data.append('name', clean_string($("#name").val()));
+        form_data.append('text', clean_string($("#reviewtext").val()));
+        form_data.append('rating', $("#rating").val());
+        form_data.append('img', $('#img').prop('files')[0]);
+  
+        // AJAX POST call
+        $.ajax({
+          url: "{% url 'add_review' recipe_id=recipe.RecipeID %}",
+          type: "POST",
+          data: form_data,
+          processData: false,
+          contentType: false,
+          dataType: "json",
+          success: function (data) {
+            if (!data.made) {
+              $("#review-message").removeClass().addClass('text-warning').text("Please click 'I Made This' before submitting a review.");
+              $("#review-message").show();
+  
+              // Hide message after 3 seconds
+              $("#review-message").delay(3000).fadeOut(400);
+            } else if (!data.valid_file){
+              $("#review-message").removeClass().addClass('text-warning').text(data.reason);
+              $("#review-message").show();
+  
+              // Hide message after 3 seconds
+              $("#review-message").delay(3000).fadeOut(400);
+							// Reset form
+							$("#add-review")[0].reset()
+							$('#upload-btn').html(
+									'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;"><path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg> Show your creation!'
+							)
+						} else{
+              // Get HTML to update reviews and overall ratings
+              $.ajax({
+                url: "{% url 'recipe' recipe.RecipeID%}",
+                type: "GET",
+                success: function (response) {
+                  var $responseHtml = $(response);
+                  var $review_div = $responseHtml.find("#reviewContainer");
+                  var $overall_ratings_div =
+                    $responseHtml.find("#overall-ratings");
+                    
+                  // Get overall ratings div and review container
+                  $("#reviewContainer").html($review_div.html());
+                  $("#overall-ratings").html($overall_ratings_div.html());
+                    
+                  $("#review-message").removeClass().addClass('text-success').text("Review Added!");
+									// Reset form
+									$("#add-review")[0].reset()
+									$('#upload-btn').html(
+											'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mt-auto mb-auto" style="width: 0.875rem; height: 0.875rem;"><path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg> Show your creation!'
+									)
+									$("#review-message").show();
+
+									// Hide message after 2 seconds
+									$("#review-message").delay(2000).fadeOut(400);
+
+                },
+                error: function () {
+                  // For debugging
+                  console.error("Error geting HTML!");
+                },
+              });
+            }
+          },
+          error: function () {
+            // For debugging
+            console.log("Error updating database!");
+          },
+        });
+      });
+    });
+
+    function updateTwitterText() {
+        var recipeName = document.getElementById("recipe_name").textContent;
+        var reviewText = document.getElementById("reviewtext").value;
+        var footerNote = " \n\n #ZeroWasteKitchen";
+        var websiteCredit = " - Courtesy of peteryau.com";
+        var message = "Check out my cooking review for " + recipeName + ": " + reviewText + footerNote + websiteCredit;
+
+        var twitterLink = document.querySelector("a[href^='https://twitter.com/intent/tweet']");
+   
+        twitterLink.href = "https://twitter.com/intent/tweet?source=webclient&text=" + encodeURIComponent(message);
+    }
+
+    function shareOnPinterest() {
+        var websiteURL = "xsite.com";
+        var reviewText = document.getElementById("reviewtext").value;
+        var imageURL = document.getElementById("recipe_image").querySelector("img").getAttribute("src");
+
+        var pinterestURL = "https://pinterest.com/pin/create/button/?url=" + encodeURIComponent(websiteURL) + "&description=" + encodeURIComponent(reviewText) + "&media=" + encodeURIComponent(imageURL);
+
+        window.open(pinterestURL, "_blank");
+    }
+  </script>
+  
+{% endblock javascripts %}

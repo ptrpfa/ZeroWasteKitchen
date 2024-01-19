@@ -1,0 +1,246 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Challenges {% endblock title %}
+
+{% block content %}
+
+
+  <div class="header bg-primary pb-6">
+    <div class="container-fluid">
+      <div class="header-body">
+        <div class="row align-items-center py-4">
+          <div class="col-lg-12 col-12">
+            <h6 class="h2 text-white d-inline-block mb-0">Complete The Challenges!</h6>
+            <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+              <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                <li class="breadcrumb-item"><a href="/search"><i class="fas fa-home"></i></a></li>
+                <li class="breadcrumb-item active" aria-current="page">Challenges</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page content -->
+  <div class="container-fluid mt--6">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <!-- Card header -->
+          <div class="card-header border-0">
+            <h3 class="mb-0">Daily Challenges!</h3>
+            <h5 class="mb-0 text-orange">Ends in:
+              <div class="d-inline-block" id="timer">
+                <span id="hours"></span>hours
+                <span id="minutes"></span>minutes
+                <span id="seconds"></span>seconds
+              </div>               
+            </h6>
+          </div>
+          <!-- Light table -->
+          <div class="table-responsive">
+            <table class="table align-items-center table-flush">
+              <thead class="thead-light">
+                <tr>
+                  <th scope="col" class="sort" data-sort="name">Challenge</th>
+                  <th scope="col" class="sort" data-sort="budget">Quantity</th>
+                  <th scope="col" class="sort" data-sort="status">Status</th>
+                  <th scope="col" class="sort" data-sort="completion">Completion</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody class="list">
+                <tr>
+                  <th scope="row">
+                    <div class="media align-items-center">
+                      <a href="#" class="avatar rounded-circle mr-3">
+                        <img alt="Image placeholder" src="/static/assets/img/theme/calorie.png">
+                      </a>
+                      <div class="media-body">
+                        <span class="name mb-0 text-sm">{{ daily_calories_limit }} Calorie Intake</span>
+                      </div>
+                    </div>
+                  </th>
+                  <td class="quantity">
+                    <span>{{ total_calories }} / {{ daily_calories_limit }}</span> cal
+                  </td>
+                  <td>
+                    {% if calorie_status == "In Progress" %}
+                    <span class="badge badge-dot mr-4">
+                      <i class="bg-warning"></i>
+                      <span class="status">In Progress</span>
+                    </span>
+                    {% elif calorie_status == "Completed" %}
+                    <span class="badge badge-dot mr-4">
+                      <i class="bg-success"></i>
+                      <span class="status">Completed</span>
+                    </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="completion mr-2">{{ total_calories_percentage }}%</span>
+                      <div>
+                        <div class="progress">
+                          <div class="progress-bar bg-warning" role="progressbar" aria-valuenow="{{ total_calories_percentage }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ total_calories_percentage }}%;"></div>
+                        </div>
+                      </div>
+                    </div>                    
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                    <div class="media align-items-center">
+                      <a href="#" class="avatar rounded-circle mr-3">
+                        <img alt="Image placeholder" src="/static/assets/img/theme/recipe.png">
+                      </a>
+                      <div class="media-body">
+                        <span class="name mb-0 text-sm">Make {{ recipe_count_number }} Recipes</span>
+                      </div>
+                    </div>
+                  </th>
+                  <td class="quantity">
+                    <span>{{ user_recipe_count }} / {{ recipe_count_number }}</span>
+                  </td>
+                  <td>
+                    {% if count_status == "In Progress" %}
+                    <span class="badge badge-dot mr-4">
+                      <i class="bg-warning"></i>
+                      <span class="status">In Progress</span>
+                    </span>
+                    {% elif count_status == "Completed" %}
+                    <span class="badge badge-dot mr-4">
+                      <i class="bg-success"></i>
+                      <span class="status">Completed</span>
+                    </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="completion mr-2">{{ total_count_percentage }}%</span>
+                      <div>
+                        <div class="progress">
+                          <div class="progress-bar bg-warning" role="progressbar" aria-valuenow="{{ total_count_percentage }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ total_count_percentage }}%;"></div>
+                        </div>
+                      </div>
+                    </div>                    
+                  </td>
+                </tr>
+
+                <tr>
+                  <th scope="row">
+                    <div class="media align-items-center">
+                      <a href="#" class="avatar rounded-circle mr-3">
+                        <img alt="Image placeholder" src="/static/assets/img/theme/barley.png">
+                      </a>
+                      <div class="media-body">
+                        <span class="name mb-0 text-sm">Make Something That Contains {{ ingredient_of_the_day }} </span>
+                      </div>
+                    </div>
+                  </th>
+                  <td class="quantity">
+                    <span>{{ ingredient_count }} / 1</span>
+                  </td>
+                  <td>
+                    {% if ingredient_status == "In Progress" %}
+                    <span class="badge badge-dot mr-4">
+                      <i class="bg-warning"></i>
+                      <span class="status">In Progress</span>
+                    </span>
+                    {% elif ingredient_status == "Completed" %}
+                    <span class="badge badge-dot mr-4">
+                      <i class="bg-success"></i>
+                      <span class="status">Completed</span>
+                    </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="completion mr-2">{{ ingredient_count_percentage }}%</span>
+                      <div>
+                        <div class="progress">
+                          <div class="progress-bar bg-warning" role="progressbar" aria-valuenow="{{ ingredient_count_percentage }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ ingredient_count_percentage }}%;"></div>
+                        </div>
+                      </div>
+                    </div>                    
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Card footer -->
+          <div class="card-footer py-4" style="background: #f7fbff;">
+            <i>Progress: </i>
+            <div class="progress mt-3" style="height: 20px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ total_percentage }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ total_percentage }}%;">{{ total_percentage }}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    {% include "includes/footer.html" %}
+
+  </div>
+
+
+  <!-- Additional Styles n Scripts -->
+  <style>
+    #timer {
+      color: #999;
+      letter-spacing: -1px;
+    }
+    #timer span {
+      color: #333;
+      margin: 0 3px 0 2px;
+    }
+    #timer span:first-child {
+      margin-left: 0;
+    }
+
+  </style>
+
+<!-- Script -->
+  <script>
+    var timer;
+
+    var compareDate = new Date();
+    compareDate.setDate(compareDate.getDate() + 1); 
+    compareDate.setHours(0, 0, 0, 0); // set the time to 00:00:00
+
+    timer = setInterval(function() {
+      timeBetweenDates(compareDate);
+    }, 1000);
+
+    function timeBetweenDates(toDate) {
+      var now = new Date();
+      var difference = toDate.getTime() - now.getTime();
+
+      if (difference <= 0) {
+        // Timer done
+        clearInterval(timer);
+      } else {
+        var seconds = Math.floor(difference / 1000);
+        var minutes = Math.floor(seconds / 60);
+        var hours = Math.floor(minutes / 60);
+        var days = Math.floor(hours / 24);
+
+        hours %= 24;
+        minutes %= 60;
+        seconds %= 60;
+
+        $("#days").text(days);
+        $("#hours").text(hours);
+        $("#minutes").text(minutes);
+        $("#seconds").text(seconds);
+      }
+    }
+  </script>
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}{% endblock javascripts %}
+

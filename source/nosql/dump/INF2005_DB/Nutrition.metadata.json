@@ -1,1 +1,0 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"Servings":{"$numberInt":"1"}},"name":"Servings_1_autocreated"}],"uuid":"130f624e4f364b29b4e77f7a48fdeb01","collectionName":"Nutrition","type":"collection"}
